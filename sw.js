@@ -1,10 +1,10 @@
 // MindCompass Service Worker
 // 版本號：每次更新 App 時請遞增
-const CACHE_NAME = 'mindcompass-v1';
+const CACHE_NAME = 'mindcompass-v2';
 
 // 要快取的資源清單
 const ASSETS_TO_CACHE = [
-  './mindcompass.html',
+  './index.html',
   './manifest.json',
   './icon-192.png',
   './icon-512.png',
@@ -77,7 +77,7 @@ self.addEventListener('fetch', (event) => {
       }).catch(() => {
         // 網路也失敗，回傳離線頁面
         if (event.request.destination === 'document') {
-          return caches.match('./mindcompass.html');
+          return caches.match('./index.html');
         }
       });
     })

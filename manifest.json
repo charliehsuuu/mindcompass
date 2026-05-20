@@ -2,7 +2,7 @@
   "name": "MindCompass 情緒日誌",
   "short_name": "MindCompass",
   "description": "每日情緒與用藥觀察日誌，在做決定之前先看到自己的狀態。",
-  "start_url": "./mindcompass.html",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#0f0e14",
   "theme_color": "#0f0e14",
@@ -22,6 +22,9 @@
       "purpose": "any maskable"
     }
   ],
-  "categories": ["health", "lifestyle"],
+  "categories": [
+    "health",
+    "lifestyle"
+  ],
   "screenshots": []
 }
