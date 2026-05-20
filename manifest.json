@@ -1,0 +1,27 @@
+{
+  "name": "MindCompass 情緒日誌",
+  "short_name": "MindCompass",
+  "description": "每日情緒與用藥觀察日誌，在做決定之前先看到自己的狀態。",
+  "start_url": "./mindcompass.html",
+  "display": "standalone",
+  "background_color": "#0f0e14",
+  "theme_color": "#0f0e14",
+  "orientation": "portrait",
+  "lang": "zh-TW",
+  "icons": [
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["health", "lifestyle"],
+  "screenshots": []
+}
