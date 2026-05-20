@@ -711,13 +711,13 @@ function updateSlider(key, val) {
 function calcScore() {
   const s = sliderVals;
   return Math.min(100, Math.max(0, Math.round(
-    s.calm * 11 +
+    (s.calm * 11 +
     s.energy * 10 +
     s.connect * 9 +
     (10 - s.anxiety) * 10 +
     (10 - s.depress) * 10 +
-    s.self * 8
-  ) / 5.8));
+    s.self * 8) / 5.8
+  )));
 }
 
 function updateHero() {
