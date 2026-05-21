@@ -5,29 +5,33 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MindCompass — 情緒觀察日誌</title>
 <link rel="manifest" href="./manifest.json">
-<meta name="theme-color" content="#0f0e14">
+<meta name="theme-color" content="#f0f4f8">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="MindCompass">
 <link rel="apple-touch-icon" href="./apple-touch-icon.png">
-<meta name="msapplication-TileColor" content="#0f0e14">
+<meta name="msapplication-TileColor" content="#f0f4f8">
 <meta name="msapplication-TileImage" content="./icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0f0e14;
-    --surface: #1a1826;
-    --surface2: #221f31;
-    --border: rgba(255,255,255,0.07);
-    --text: #e8e4f0;
-    --muted: #7a748e;
-    --accent: #c8a97e;
-    --accent2: #9b8ec4;
-    --good: #7ec8a0;
-    --warn: #e8b86d;
-    --danger: #e87d7d;
+    --bg: #f0f4f8;
+    --surface: #ffffff;
+    --surface2: #f5f7fa;
+    --border: #e0e5ec;
+    --text: #1a2636;
+    --muted: #6b7a8d;
+    --accent: #1D9E75;
+    --accent2: #534AB7;
+    --good: #1D9E75;
+    --warn: #BA7517;
+    --danger: #E24B4A;
     --radius: 16px;
+    /* 三區塊專屬色 */
+    --mood-bg: #e8f5f1; --mood-border: #9FE1CB; --mood-dark: #0F6E56; --mood-mid: #1D9E75;
+    --sleep-bg: #ede9fb; --sleep-border: #AFA9EC; --sleep-dark: #3C3489; --sleep-mid: #534AB7;
+    --factor-bg: #FAEEDA; --factor-border: #FAC775; --factor-dark: #633806; --factor-mid: #BA7517;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -43,8 +47,8 @@
     position: fixed;
     inset: 0;
     background:
-      radial-gradient(ellipse at 20% 10%, rgba(155,142,196,0.08) 0%, transparent 50%),
-      radial-gradient(ellipse at 80% 90%, rgba(200,169,126,0.06) 0%, transparent 50%);
+      radial-gradient(ellipse at 20% 10%, rgba(29,158,117,0.05) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 90%, rgba(83,74,183,0.05) 0%, transparent 50%);
     pointer-events: none;
     z-index: 0;
   }
@@ -69,7 +73,7 @@
     color: var(--text);
     letter-spacing: -0.5px;
   }
-  .header-left h1 span { color: var(--accent); font-style: italic; }
+  .header-left h1 span { color: var(--mood-mid); font-style: italic; }
   .header-left p { color: var(--muted); font-size: 17px; margin-top: 4px; }
   .date-badge {
     background: var(--surface);
@@ -79,18 +83,20 @@
     font-size: 17px;
     color: var(--muted);
     white-space: nowrap;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
   }
 
   /* ── Mood Hero ── */
   .mood-hero {
-    background: var(--surface);
-    border: 1px solid var(--border);
+    background: linear-gradient(135deg, #e8f5f1 0%, #ede9fb 100%);
+    border: 1px solid #dde6f0;
     border-radius: var(--radius);
     padding: 28px;
     margin-bottom: 20px;
     display: flex;
     align-items: center;
     gap: 32px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.05);
   }
   .mood-ring-wrap { position: relative; flex-shrink: 0; }
   .mood-ring-wrap svg { transform: rotate(-90deg); display: block; }
@@ -103,7 +109,7 @@
   .mood-score-label .score {
     font-family: 'DM Serif Display', serif;
     font-size: 44px;
-    color: var(--text);
+    color: #1a2636;
     line-height: 1;
   }
   .mood-score-label .score-sub { font-size: 17px; color: var(--muted); margin-top: 3px; }
@@ -130,6 +136,7 @@
     padding: 4px;
     margin-bottom: 20px;
     overflow-x: auto;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
   }
   .tab-btn {
     flex: 1;
@@ -145,7 +152,7 @@
     transition: all 0.2s;
     white-space: nowrap;
   }
-  .tab-btn.active { background: var(--surface2); color: var(--text); }
+  .tab-btn.active { background: var(--sleep-mid); color: #fff; }
   .tab-btn:hover:not(.active) { color: var(--text); }
 
   /* ── Panel ── */
@@ -159,6 +166,7 @@
     border: 1px solid var(--border);
     border-radius: var(--radius);
     padding: 20px;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.05);
   }
   .card h3 {
     font-size: 17px;
@@ -167,6 +175,45 @@
     letter-spacing: 1.2px;
     margin-bottom: 16px;
   }
+  /* ── 三區塊色卡 ── */
+  .card-mood {
+    background: var(--mood-bg);
+    border-color: var(--mood-border);
+  }
+  .card-mood h3 { color: var(--mood-dark); }
+  .card-mood .mood-row label { color: var(--mood-dark); }
+  .card-mood .step-btn { border-color: var(--mood-border); background: #fff; color: var(--mood-mid); }
+  .card-mood .step-btn:hover { background: var(--mood-mid); color: #fff; border-color: var(--mood-mid); }
+  .card-mood .step-val { color: var(--mood-dark); }
+
+  .card-sleep {
+    background: var(--sleep-bg);
+    border-color: var(--sleep-border);
+  }
+  .card-sleep h3 { color: var(--sleep-dark); }
+  .card-sleep .med-row label { color: var(--sleep-dark); }
+  .card-sleep .step-btn { border-color: var(--sleep-border); background: #fff; color: var(--sleep-mid); }
+  .card-sleep .step-btn:hover { background: var(--sleep-mid); color: #fff; border-color: var(--sleep-mid); }
+  .card-sleep .step-val { color: var(--sleep-dark); }
+  .card-sleep .med-unit { color: var(--sleep-mid); }
+  .card-sleep .sleep-hour-input { background: #fff; border-color: var(--sleep-border); color: var(--sleep-dark); }
+  .card-sleep .sleep-hour-input:focus { border-color: var(--sleep-mid); }
+  .card-sleep .sq-btn { border-color: var(--sleep-border); color: var(--sleep-mid); background: rgba(255,255,255,0.6); }
+  .card-sleep .sq-btn:hover { color: var(--sleep-dark); }
+  .card-sleep .sq-btn.active-good { background: #fff; border-color: var(--sleep-mid); color: var(--sleep-dark); font-weight:600; }
+  .card-sleep .sq-btn.active-ok   { background: #fff; border-color: var(--sleep-mid); color: var(--sleep-dark); font-weight:600; }
+  .card-sleep .sq-btn.active-bad  { background: #fff; border-color: var(--sleep-mid); color: var(--sleep-dark); font-weight:600; }
+  .card-sleep .divider { background: var(--sleep-border); }
+
+  .card-factor {
+    background: var(--factor-bg);
+    border-color: var(--factor-border);
+  }
+  .card-factor h3 { color: var(--factor-dark); }
+  .card-factor .factor-chip { border-color: var(--factor-border); color: var(--factor-mid); background: rgba(255,255,255,0.5); }
+  .card-factor .factor-chip:hover { background: rgba(255,255,255,0.8); color: var(--factor-dark); }
+  .card-factor .factor-chip.selected-good { background: var(--mood-bg); border-color: var(--mood-mid); color: var(--mood-dark); }
+  .card-factor .factor-chip.selected-bad  { background: #fdecea; border-color: #E24B4A; color: #A32D2D; }
 
   /* ── Mood steppers ── */
   .mood-steppers { display: flex; flex-direction: column; gap: 10px; }
@@ -178,13 +225,14 @@
     display: none;
     align-items: center;
     gap: 10px;
-    background: rgba(126,200,160,0.1);
-    border: 1px solid rgba(126,200,160,0.3);
+    background: var(--mood-bg);
+    border: 1px solid var(--mood-border);
     border-radius: 12px;
     padding: 14px 18px;
     margin-bottom: 16px;
-    color: var(--good);
+    color: var(--mood-dark);
     font-size: 16px;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.05);
   }
   .locked-banner.show { display: flex; }
   .form-locked { pointer-events: none; opacity: 0.45; }
@@ -198,16 +246,16 @@
     width: 28px; height: 28px;
     border: 1px solid var(--border);
     border-radius: 8px;
-    background: var(--surface2);
+    background: var(--surface);
     color: var(--text);
     cursor: pointer;
     font-size: 20px;
     display: flex; align-items: center; justify-content: center;
-    transition: background 0.15s;
+    transition: background 0.15s, color 0.15s;
     line-height: 1;
   }
-  .step-btn:hover { background: rgba(200,169,126,0.15); border-color: var(--accent); }
-  .step-val { font-weight: 600; min-width: 32px; text-align: center; color: var(--accent); font-size: 17px; }
+  .step-btn:hover { background: var(--surface2); }
+  .step-val { font-weight: 600; min-width: 32px; text-align: center; color: var(--text); font-size: 17px; }
   .med-unit { font-size: 20px; color: var(--muted); }
 
   /* ── Factor chips ── */
@@ -216,29 +264,29 @@
     padding: 7px 14px;
     border-radius: 50px;
     border: 1px solid var(--border);
-    background: transparent;
+    background: var(--surface);
     color: var(--muted);
     font-size: 20px;
     cursor: pointer;
     transition: all 0.2s;
     font-family: 'DM Sans', sans-serif;
   }
-  .factor-chip:hover { color: var(--text); border-color: rgba(255,255,255,0.15); }
+  .factor-chip:hover { color: var(--text); border-color: #c0c8d4; }
   .factor-chip.selected-bad {
-    background: rgba(232,125,125,0.12);
-    border-color: var(--danger);
-    color: var(--danger);
+    background: #fdecea;
+    border-color: #E24B4A;
+    color: #A32D2D;
   }
   .factor-chip.selected-good {
-    background: rgba(126,200,160,0.12);
-    border-color: var(--good);
-    color: var(--good);
+    background: var(--mood-bg);
+    border-color: var(--mood-mid);
+    color: var(--mood-dark);
   }
 
   /* ── Sleep ── */
   .sleep-input-row { display: flex; align-items: center; gap: 12px; }
   .sleep-hour-input {
-    background: var(--surface2);
+    background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 10px;
     color: var(--text);
@@ -256,7 +304,7 @@
     padding: 8px 4px;
     border: 1px solid var(--border);
     border-radius: 9px;
-    background: transparent;
+    background: var(--surface);
     color: var(--muted);
     font-size: 20px;
     cursor: pointer;
@@ -264,9 +312,9 @@
     transition: all 0.2s;
   }
   .sq-btn:hover { color: var(--text); }
-  .sq-btn.active-good { background: rgba(126,200,160,0.12); border-color: var(--good); color: var(--good); }
-  .sq-btn.active-ok   { background: rgba(232,184,109,0.12); border-color: var(--warn); color: var(--warn); }
-  .sq-btn.active-bad  { background: rgba(232,125,125,0.12); border-color: var(--danger); color: var(--danger); }
+  .sq-btn.active-good { background: var(--mood-bg); border-color: var(--mood-mid); color: var(--mood-dark); font-weight:600; }
+  .sq-btn.active-ok   { background: #fff8ee; border-color: var(--warn); color: var(--factor-dark); font-weight:600; }
+  .sq-btn.active-bad  { background: #fdecea; border-color: var(--danger); color: #A32D2D; font-weight:600; }
 
   /* ── Note textarea ── */
   .note-input {
@@ -285,23 +333,24 @@
     margin-top: 12px;
     transition: border-color 0.2s;
   }
-  .note-input:focus { border-color: var(--accent2); }
+  .note-input:focus { border-color: var(--sleep-mid); }
   .note-input::placeholder { color: var(--muted); }
 
   /* ── Submit ── */
   .submit-btn {
     width: 100%;
     padding: 15px;
-    background: linear-gradient(135deg, var(--accent), #b8906a);
+    background: var(--sleep-mid);
     border: none;
     border-radius: 12px;
-    color: #1a1410;
+    color: #fff;
     font-size: 17px;
     font-weight: 600;
     font-family: 'DM Sans', sans-serif;
     cursor: pointer;
     margin-top: 16px;
     transition: opacity 0.2s, transform 0.1s;
+    box-shadow: 0 4px 14px rgba(83,74,183,0.25);
   }
   .submit-btn:hover { opacity: 0.9; }
   .submit-btn:active { transform: scale(0.99); }
@@ -319,6 +368,7 @@
     border-radius: var(--radius);
     padding: 20px;
     text-align: center;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.05);
   }
   .stat-card .stat-val {
     font-family: 'DM Serif Display', serif;
@@ -339,15 +389,16 @@
 
   /* ── Insight banner ── */
   .insight-banner {
-    background: linear-gradient(135deg, rgba(155,142,196,0.10), rgba(200,169,126,0.07));
-    border: 1px solid rgba(155,142,196,0.18);
+    background: linear-gradient(135deg, #e8f5f1, #ede9fb);
+    border: 1px solid #c5c0e8;
     border-radius: var(--radius);
     padding: 18px 20px;
     margin-bottom: 16px;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.05);
   }
   .insight-banner h3 {
     font-size: 17px;
-    color: var(--accent2);
+    color: var(--sleep-dark);
     margin-bottom: 8px;
     letter-spacing: 0.8px;
     text-transform: uppercase;
@@ -365,6 +416,7 @@
     display: flex;
     align-items: center;
     gap: 14px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
   }
   .log-dot {
     width: 10px; height: 10px;
@@ -378,7 +430,7 @@
   .log-date { font-size: 20px; color: var(--muted); }
   .log-summary { font-size: 17px; margin-top: 3px; }
   .log-tags { margin-top: 6px; display: flex; gap: 5px; flex-wrap: wrap; }
-  .log-tag { font-size: 17px; color: var(--muted); background: var(--surface2); padding: 2px 8px; border-radius: 50px; }
+  .log-tag { font-size: 17px; color: var(--sleep-dark); background: var(--sleep-bg); padding: 2px 8px; border-radius: 50px; }
   .log-meta { text-align: right; flex-shrink: 0; }
   .log-score { font-family: 'DM Serif Display', serif; font-size: 25px; }
   .log-med { font-size: 17px; color: var(--muted); margin-top: 3px; }
@@ -391,17 +443,19 @@
     position: fixed;
     bottom: 32px; left: 50%;
     transform: translateX(-50%) translateY(16px);
-    background: var(--surface2);
-    border: 1px solid rgba(126,200,160,0.3);
+    background: var(--surface);
+    border: 1px solid var(--mood-border);
     border-radius: 50px;
     padding: 12px 26px;
     font-size: 17px;
-    color: var(--good);
+    color: var(--mood-dark);
+    font-weight: 600;
     opacity: 0;
     transition: all 0.3s;
     pointer-events: none;
     white-space: nowrap;
     z-index: 999;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
@@ -431,7 +485,7 @@
   <div class="mood-hero">
     <div class="mood-ring-wrap">
       <svg width="128" height="128" viewBox="0 0 128 128">
-        <circle cx="64" cy="64" r="52" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="10"/>
+        <circle cx="64" cy="64" r="52" fill="none" stroke="#dde6f0" stroke-width="10"/>
         <circle id="moodArc" cx="64" cy="64" r="52" fill="none"
           stroke="url(#arcGrad)" stroke-width="10"
           stroke-linecap="round"
@@ -439,8 +493,8 @@
           style="transition: stroke-dashoffset 0.5s ease"/>
         <defs>
           <linearGradient id="arcGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" style="stop-color:#c8a97e"/>
-            <stop offset="100%" style="stop-color:#9b8ec4"/>
+            <stop offset="0%" style="stop-color:#1D9E75"/>
+            <stop offset="100%" style="stop-color:#534AB7"/>
           </linearGradient>
         </defs>
       </svg>
@@ -479,7 +533,7 @@
     <div class="grid-2">
 
       <!-- 當下心情 -->
-      <div class="card">
+      <div class="card card-mood">
         <h3>當下心情狀態</h3>
         <div class="mood-steppers">
           <div class="mood-row">
@@ -534,7 +588,7 @@
       </div>
 
       <!-- 睡眠 + 藥量 -->
-      <div class="card">
+      <div class="card card-sleep">
         <h3>昨晚睡眠</h3>
         <div style="display:flex;flex-direction:column;gap:12px">
           <div class="sleep-input-row" style="gap:16px">
@@ -604,7 +658,7 @@
     </div>
 
     <!-- 影響因素 -->
-    <div class="card" style="margin-bottom:16px">
+    <div class="card card-factor" style="margin-bottom:16px">
       <h3>今天的影響因素</h3>
       <div style="font-size:16px;color:var(--good);margin-bottom:10px">✦ 正面因素（點選已發生的）</div>
       <div class="factor-grid">
