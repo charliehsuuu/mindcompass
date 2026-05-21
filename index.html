@@ -724,37 +724,43 @@ function stepMood(key, delta) {
 function calcScore() {
   const s = sliderVals;
 
-  // ── 心情基礎分（1-5 scale，max ≈ 100）──
-  const base = Math.round(
-    (s.calm * 2 * 11 +
-    s.energy * 2 * 10 +
-    s.connect * 2 * 9 +
-    (6 - s.anxiety) * 2 * 10 +
-    (6 - s.depress) * 2 * 10 +
-    s.self * 2 * 8) / 5.8
-  );
+  // ── 心情分（0-100）：6 指標各自正規化後加權平均 ──
+  const n = {
+    calm:    (s.calm - 1) / 4 * 100,
+    energy:  (s.energy - 1) / 4 * 100,
+    connect: (s.connect - 1) / 4 * 100,
+    anxiety: (5 - s.anxiety) / 4 * 100,  // 反向：越焦慮分越低
+    depress: (5 - s.depress) / 4 * 100,  // 反向：越低落分越低
+    self:    (s.self - 1) / 4 * 100,
+  };
+  const moodScore = (n.calm*11 + n.energy*10 + n.connect*9 +
+                     n.anxiety*10 + n.depress*10 + n.self*8) / 58;
 
-  // ── 睡眠加減分（-10 ~ +8）──
+  // ── 睡眠分（0-100）：時數決定基礎分，品質微調 ──
   const h = parseFloat(document.getElementById('sleepHour').value);
-  let sleepAdj = 0;
+  let sleepScore = 50; // 未填寫時給中間值
   if (!isNaN(h) && h > 0) {
-    if      (h >= 7 && h <= 9) sleepAdj =  8;
-    else if (h >= 6 && h < 7)  sleepAdj =  4;
-    else if (h > 9 && h <= 10) sleepAdj =  4;
-    else if (h >= 5 && h < 6)  sleepAdj = -2;
-    else if (h > 10)            sleepAdj = -2;
-    else                        sleepAdj = -10; // < 5 小時
+    if      (h >= 7 && h <= 9)  sleepScore = 100;
+    else if (h >= 6 && h < 7)   sleepScore = 80;
+    else if (h > 9 && h <= 10)  sleepScore = 80;
+    else if (h >= 5 && h < 6)   sleepScore = 55;
+    else if (h > 10 && h <= 11) sleepScore = 60;
+    else if (h >= 4 && h < 5)   sleepScore = 30;
+    else                         sleepScore = 10; // 未滿 4 小時
   }
-  // 睡眠品質修正
-  if      (sleepQuality === 'good') sleepAdj += 2;
-  else if (sleepQuality === 'bad')  sleepAdj -= 3;
+  if      (sleepQuality === 'good') sleepScore = Math.min(100, sleepScore + 10);
+  else if (sleepQuality === 'bad')  sleepScore = Math.max(0,   sleepScore - 15);
 
-  // ── 影響因素加減分（正面 +2／負面 -3，上下限 ±15）──
+  // ── 因素分（0-100）：正面 / 負面各自貢獻一半 ──
+  // 全選正面 → 100，全無 → 50，全選負面 → 0
   const goodCount = document.querySelectorAll('.factor-chip.selected-good').length;
   const badCount  = document.querySelectorAll('.factor-chip.selected-bad').length;
-  const factorAdj = Math.max(-15, Math.min(15, goodCount * 2 - badCount * 3));
+  const factorScore = ((goodCount / 11) * 100 + (1 - badCount / 14) * 100) / 2;
 
-  return Math.min(100, Math.max(0, base + sleepAdj + factorAdj));
+  // ── 加權平均：心情 25% + 睡眠 50% + 因素 25% ──
+  return Math.min(100, Math.max(0, Math.round(
+    moodScore * 0.25 + sleepScore * 0.50 + factorScore * 0.25
+  )));
 }
 
 function updateHero() {
