@@ -536,16 +536,34 @@
       <!-- 睡眠 + 藥量 -->
       <div class="card">
         <h3>昨晚睡眠</h3>
-        <div class="sleep-input-row">
-          <input type="number" class="sleep-hour-input" id="sleepHour"
-            value="" min="0" max="14" step="0.5" placeholder="—"
-            oninput="updateHero()">
-          <span style="color:var(--muted);font-size:17px">小時</span>
-        </div>
-        <div class="sleep-quality">
-          <button class="sq-btn" onclick="setSleepQ('good',this)">😴 沉穩</button>
-          <button class="sq-btn active-ok" onclick="setSleepQ('ok',this)">💤 普通</button>
-          <button class="sq-btn" onclick="setSleepQ('bad',this)">😵 淺眠</button>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div class="sleep-input-row" style="gap:16px">
+            <div style="flex:1">
+              <div style="font-size:13px;color:var(--muted);margin-bottom:6px;letter-spacing:0.5px">總時數</div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <input type="number" class="sleep-hour-input" id="sleepHour"
+                  value="" min="0" max="14" step="0.5" placeholder="—"
+                  oninput="updateHero()">
+                <span style="color:var(--muted);font-size:17px">小時</span>
+              </div>
+            </div>
+            <div style="flex:1">
+              <div style="font-size:13px;color:var(--muted);margin-bottom:6px;letter-spacing:0.5px">深層睡眠</div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <input type="number" class="sleep-hour-input" id="deepSleepHour"
+                  value="" min="0" max="8" step="0.5" placeholder="—">
+                <span style="color:var(--muted);font-size:17px">小時</span>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:13px;color:var(--muted);margin-bottom:8px;letter-spacing:0.5px">自我評估</div>
+            <div class="sleep-quality">
+              <button class="sq-btn" onclick="setSleepQ('good',this)">😴 沉穩</button>
+              <button class="sq-btn active-ok" onclick="setSleepQ('ok',this)">💤 普通</button>
+              <button class="sq-btn" onclick="setSleepQ('bad',this)">😵 淺眠</button>
+            </div>
+          </div>
         </div>
 
         <div class="divider"></div>
@@ -748,8 +766,7 @@ function calcScore() {
     else if (h >= 4 && h < 5)   sleepScore = 30;
     else                         sleepScore = 10; // 未滿 4 小時
   }
-  if      (sleepQuality === 'good') sleepScore = Math.min(100, sleepScore + 10);
-  else if (sleepQuality === 'bad')  sleepScore = Math.max(0,   sleepScore - 15);
+  // 自我評估（沉穩/普通/淺眠）僅供記錄，不影響分數
 
   // ── 因素分（0-100）：正面 / 負面各自貢獻一半 ──
   // 全選正面 → 100，全無 → 50，全選負面 → 0
