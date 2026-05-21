@@ -692,6 +692,20 @@
         <canvas id="medChart"></canvas>
       </div>
     </div>
+
+    <div class="card" style="margin-bottom:16px">
+      <h3>睡眠時間趨勢（近 14 天）</h3>
+      <div class="chart-wrap sm">
+        <canvas id="sleepChart"></canvas>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>深層睡眠趨勢（近 14 天）</h3>
+      <div class="chart-wrap sm">
+        <canvas id="deepSleepChart"></canvas>
+      </div>
+    </div>
   </div>
 
   <!-- ════ PANEL: 歷史日誌 ════ -->
@@ -856,11 +870,13 @@ function showToast(msg) {
 }
 
 /* ════ CHARTS ════ */
-let moodInst, medInst;
+let moodInst, medInst, sleepInst, deepSleepInst;
 function renderCharts() {
   const labels = [];
-  const moodData = new Array(14).fill(null);
-  const medData  = new Array(14).fill(null);
+  const moodData      = new Array(14).fill(null);
+  const medData       = new Array(14).fill(null);
+  const sleepData     = new Array(14).fill(null);
+  const deepSleepData = new Array(14).fill(null);
   for(let i = 13; i >= 0; i--) {
     const d = new Date(); d.setDate(d.getDate() - i);
     labels.push(`${d.getMonth()+1}/${d.getDate()}`);
@@ -914,6 +930,50 @@ function renderCharts() {
       plugins: { legend: { display: false } },
       scales: { x: axisOpts, y: { ...axisOpts, min: 0, max: 2,
         ticks: { ...axisOpts.ticks, stepSize: 0.5 } } }
+    }
+  });
+
+  if(sleepInst) sleepInst.destroy();
+  sleepInst = new Chart(document.getElementById('sleepChart'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        data: sleepData,
+        backgroundColor: 'rgba(126,200,160,0.35)',
+        borderColor: '#7ec8a0',
+        borderWidth: 1,
+        borderRadius: 5,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { x: axisOpts, y: { ...axisOpts, min: 0, max: 12,
+        ticks: { ...axisOpts.ticks, stepSize: 2,
+          callback: v => v + 'h' } } }
+    }
+  });
+
+  if(deepSleepInst) deepSleepInst.destroy();
+  deepSleepInst = new Chart(document.getElementById('deepSleepChart'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        data: deepSleepData,
+        backgroundColor: 'rgba(155,142,196,0.35)',
+        borderColor: '#9b8ec4',
+        borderWidth: 1,
+        borderRadius: 5,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { x: axisOpts, y: { ...axisOpts, min: 0, max: 6,
+        ticks: { ...axisOpts.ticks, stepSize: 1,
+          callback: v => v + 'h' } } }
     }
   });
 }
