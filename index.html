@@ -220,6 +220,59 @@
   .mood-row { display: flex; align-items: center; gap: 10px; }
   .mood-row label { font-size: 17px; color: var(--muted); min-width: 100px; }
 
+  /* ── Collapsible sections ── */
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    padding-bottom: 14px;
+    user-select: none;
+  }
+  .section-header-left { display: flex; align-items: center; gap: 8px; }
+  .section-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .section-title { font-size: 17px; color: var(--muted); text-transform: uppercase; letter-spacing: 1.2px; }
+  .section-header-right { display: flex; align-items: center; gap: 8px; }
+  .section-summary {
+    font-size: 13px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 20px;
+    display: none;
+  }
+  .section-summary.show { display: inline-block; }
+  .section-toggle {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+    transition: transform 0.25s ease;
+    flex-shrink: 0;
+  }
+  .section-toggle.collapsed { transform: rotate(180deg); }
+  .section-body {
+    overflow: hidden;
+    max-height: 2000px;
+    transition: max-height 0.35s ease, opacity 0.25s ease;
+    opacity: 1;
+  }
+  .section-body.collapsed {
+    max-height: 0;
+    opacity: 0;
+  }
+  .card-mood .section-dot { background: var(--mood-mid); }
+  .card-mood .section-title { color: var(--mood-dark); }
+  .card-mood .section-summary { background: rgba(29,158,117,0.12); color: var(--mood-dark); }
+  .card-mood .section-toggle { background: rgba(29,158,117,0.15); color: var(--mood-mid); }
+  .card-sleep .section-dot { background: var(--sleep-mid); }
+  .card-sleep .section-title { color: var(--sleep-dark); }
+  .card-sleep .section-summary { background: rgba(83,74,183,0.12); color: var(--sleep-dark); }
+  .card-sleep .section-toggle { background: rgba(83,74,183,0.15); color: var(--sleep-mid); }
+  .card-factor .section-dot { background: var(--factor-mid); }
+  .card-factor .section-title { color: var(--factor-dark); }
+  .card-factor .section-summary { background: rgba(186,117,23,0.12); color: var(--factor-dark); }
+  .card-factor .section-toggle { background: rgba(186,117,23,0.15); color: var(--factor-mid); }
+
   /* ── Today locked banner ── */
   .locked-banner {
     display: none;
@@ -534,7 +587,17 @@
 
       <!-- 當下心情 -->
       <div class="card card-mood">
-        <h3>當下心情狀態</h3>
+        <div class="section-header" onclick="toggleSection('mood')">
+          <div class="section-header-left">
+            <div class="section-dot"></div>
+            <span class="section-title">當下心情狀態</span>
+          </div>
+          <div class="section-header-right">
+            <span class="section-summary" id="summary-mood"></span>
+            <div class="section-toggle" id="toggle-mood">▲</div>
+          </div>
+        </div>
+        <div class="section-body" id="body-mood">
         <div class="mood-steppers">
           <div class="mood-row">
             <label>😌 平靜感</label>
@@ -585,11 +648,22 @@
             </div>
           </div>
         </div>
+        </div><!-- /body-mood -->
       </div>
 
       <!-- 睡眠 + 藥量 -->
       <div class="card card-sleep">
-        <h3>昨晚睡眠</h3>
+        <div class="section-header" onclick="toggleSection('sleep')">
+          <div class="section-header-left">
+            <div class="section-dot"></div>
+            <span class="section-title">昨晚睡眠 · 服藥</span>
+          </div>
+          <div class="section-header-right">
+            <span class="section-summary" id="summary-sleep"></span>
+            <div class="section-toggle" id="toggle-sleep">▲</div>
+          </div>
+        </div>
+        <div class="section-body" id="body-sleep">
         <div style="display:flex;flex-direction:column;gap:12px">
           <div class="sleep-input-row" style="gap:16px">
             <div style="flex:1">
@@ -597,7 +671,7 @@
               <div style="display:flex;align-items:center;gap:8px">
                 <input type="number" class="sleep-hour-input" id="sleepHour"
                   value="" min="0" max="14" step="0.5" placeholder="—"
-                  oninput="updateHero()">
+                  oninput="updateHero(); updateSummary('sleep');">
                 <span style="color:var(--muted);font-size:17px">小時</span>
               </div>
             </div>
@@ -654,12 +728,23 @@
             </div>
           </div>
         </div>
+        </div><!-- /body-sleep -->
       </div>
     </div>
 
     <!-- 影響因素 -->
     <div class="card card-factor" style="margin-bottom:16px">
-      <h3>今天的影響因素</h3>
+      <div class="section-header" onclick="toggleSection('factor')">
+        <div class="section-header-left">
+          <div class="section-dot"></div>
+          <span class="section-title">今天的影響因素</span>
+        </div>
+        <div class="section-header-right">
+          <span class="section-summary" id="summary-factor"></span>
+          <div class="section-toggle" id="toggle-factor">▲</div>
+        </div>
+      </div>
+      <div class="section-body" id="body-factor">
       <div style="font-size:16px;color:var(--good);margin-bottom:10px">✦ 正面因素（點選已發生的）</div>
       <div class="factor-grid">
         <button class="factor-chip" onclick="toggleFactor(this,'good')">🏃 有運動</button>
@@ -691,6 +776,7 @@
         <button class="factor-chip" onclick="toggleFactor(this,'bad')">😶 感到孤立</button>
         <button class="factor-chip" onclick="toggleFactor(this,'bad')">💼 工作出狀況</button>
       </div>
+      </div><!-- /body-factor -->
     </div>
 
     <!-- 備注 -->
@@ -805,6 +891,7 @@ function stepMood(key, delta) {
   sliderVals[key] = Math.min(5, Math.max(1, sliderVals[key] + delta));
   document.getElementById('val-' + key).textContent = sliderVals[key];
   updateHero();
+  updateSummary('mood');
 }
 
 function calcScore() {
@@ -891,12 +978,45 @@ function setSleepQ(q, btn) {
   updateHero();
 }
 
+/* ════ COLLAPSE ════ */
+function toggleSection(id) {
+  const body   = document.getElementById('body-' + id);
+  const toggle = document.getElementById('toggle-' + id);
+  const summary = document.getElementById('summary-' + id);
+  const isCollapsed = body.classList.toggle('collapsed');
+  toggle.classList.toggle('collapsed', isCollapsed);
+  if (isCollapsed) {
+    summary.classList.add('show');
+    updateSummary(id);
+  } else {
+    summary.classList.remove('show');
+  }
+}
+
+function updateSummary(id) {
+  const el = document.getElementById('summary-' + id);
+  if (!el) return;
+  if (id === 'mood') {
+    const s = sliderVals;
+    el.textContent = `平靜 ${s.calm} · 焦慮 ${s.anxiety} · 活力 ${s.energy}`;
+  } else if (id === 'sleep') {
+    const h  = document.getElementById('sleepHour').value  || '—';
+    const dh = document.getElementById('deepSleepHour').value || '—';
+    el.textContent = `${h}h · 深層 ${dh}h`;
+  } else if (id === 'factor') {
+    const good = document.querySelectorAll('.factor-chip.selected-good').length;
+    const bad  = document.querySelectorAll('.factor-chip.selected-bad').length;
+    el.textContent = `✦ ${good}　✕ ${bad}`;
+  }
+}
+
 /* ════ FACTORS ════ */
 function toggleFactor(el, type) {
   const has = el.classList.contains('selected-good') || el.classList.contains('selected-bad');
   el.classList.remove('selected-good','selected-bad');
   if(!has) el.classList.add('selected-'+type);
   updateHero();
+  updateSummary('factor');
 }
 
 /* ════ SAVE ════ */
