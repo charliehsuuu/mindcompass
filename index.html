@@ -168,44 +168,26 @@
     margin-bottom: 16px;
   }
 
-  /* ── Sliders ── */
-  .mood-sliders { display: flex; flex-direction: column; gap: 14px; }
-  .slider-row label {
-    display: flex;
-    justify-content: space-between;
-    font-size: 17px;
-    margin-bottom: 6px;
+  /* ── Mood steppers ── */
+  .mood-steppers { display: flex; flex-direction: column; gap: 10px; }
+  .mood-row { display: flex; align-items: center; gap: 10px; }
+  .mood-row label { font-size: 17px; color: var(--muted); min-width: 100px; }
+
+  /* ── Today locked banner ── */
+  .locked-banner {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    background: rgba(126,200,160,0.1);
+    border: 1px solid rgba(126,200,160,0.3);
+    border-radius: 12px;
+    padding: 14px 18px;
+    margin-bottom: 16px;
+    color: var(--good);
+    font-size: 16px;
   }
-  .slider-row label span:last-child { color: var(--accent); font-weight: 600; }
-  input[type=range] {
-    width: 100%;
-    -webkit-appearance: none;
-    height: 4px;
-    border-radius: 4px;
-    background: var(--surface2);
-    outline: none;
-    cursor: pointer;
-  }
-  input[type=range]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 16px; height: 16px;
-    border-radius: 50%;
-    background: var(--accent);
-    cursor: pointer;
-    box-shadow: 0 0 0 3px rgba(200,169,126,0.2);
-    transition: box-shadow 0.2s;
-  }
-  input[type=range]::-webkit-slider-thumb:hover {
-    box-shadow: 0 0 0 5px rgba(200,169,126,0.3);
-  }
-  .range-good::-webkit-slider-thumb {
-    background: var(--good);
-    box-shadow: 0 0 0 3px rgba(126,200,160,0.2);
-  }
-  .range-bad::-webkit-slider-thumb {
-    background: var(--danger);
-    box-shadow: 0 0 0 3px rgba(232,125,125,0.2);
-  }
+  .locked-banner.show { display: flex; }
+  .form-locked { pointer-events: none; opacity: 0.45; }
 
   /* ── Medicine stepper ── */
   .med-inputs { display: flex; flex-direction: column; gap: 10px; }
@@ -484,41 +466,69 @@
   <!-- ════ PANEL: 今日記錄 ════ -->
   <div class="panel active" id="panel-record">
 
+    <!-- 今日鎖定 banner -->
+    <div class="locked-banner" id="lockedBanner">
+      <span style="font-size:22px">✅</span>
+      <div>
+        <div style="font-weight:600;font-size:16px">今日記錄已完成</div>
+        <div style="color:var(--muted);font-size:14px;margin-top:2px">明天再來繼續記錄 🌙</div>
+      </div>
+    </div>
+
+    <div id="recordFormWrap">
     <div class="grid-2">
 
       <!-- 當下心情 -->
       <div class="card">
         <h3>當下心情狀態</h3>
-        <div class="mood-sliders">
-          <div class="slider-row">
-            <label><span>😌 平靜感</span><span id="val-calm">6</span></label>
-            <input type="range" class="range-good" min="1" max="10" value="6"
-              oninput="updateSlider('calm',this.value)">
+        <div class="mood-steppers">
+          <div class="mood-row">
+            <label>😌 平靜感</label>
+            <div class="step-ctrl">
+              <button class="step-btn" onclick="stepMood('calm',-1)">−</button>
+              <span class="step-val" id="val-calm">3</span>
+              <button class="step-btn" onclick="stepMood('calm',1)">+</button>
+            </div>
           </div>
-          <div class="slider-row">
-            <label><span>😟 焦慮程度</span><span id="val-anxiety">4</span></label>
-            <input type="range" class="range-bad" min="1" max="10" value="4"
-              oninput="updateSlider('anxiety',this.value)">
+          <div class="mood-row">
+            <label>😟 焦慮程度</label>
+            <div class="step-ctrl">
+              <button class="step-btn" onclick="stepMood('anxiety',-1)">−</button>
+              <span class="step-val" id="val-anxiety">3</span>
+              <button class="step-btn" onclick="stepMood('anxiety',1)">+</button>
+            </div>
           </div>
-          <div class="slider-row">
-            <label><span>🌑 低落程度</span><span id="val-depress">3</span></label>
-            <input type="range" class="range-bad" min="1" max="10" value="3"
-              oninput="updateSlider('depress',this.value)">
+          <div class="mood-row">
+            <label>🌑 低落程度</label>
+            <div class="step-ctrl">
+              <button class="step-btn" onclick="stepMood('depress',-1)">−</button>
+              <span class="step-val" id="val-depress">3</span>
+              <button class="step-btn" onclick="stepMood('depress',1)">+</button>
+            </div>
           </div>
-          <div class="slider-row">
-            <label><span>⚡ 活力感</span><span id="val-energy">6</span></label>
-            <input type="range" class="range-good" min="1" max="10" value="6"
-              oninput="updateSlider('energy',this.value)">
+          <div class="mood-row">
+            <label>⚡ 活力感</label>
+            <div class="step-ctrl">
+              <button class="step-btn" onclick="stepMood('energy',-1)">−</button>
+              <span class="step-val" id="val-energy">3</span>
+              <button class="step-btn" onclick="stepMood('energy',1)">+</button>
+            </div>
           </div>
-          <div class="slider-row">
-            <label><span>🪞 自我評價</span><span id="val-self">5</span></label>
-            <input type="range" min="1" max="10" value="5"
-              oninput="updateSlider('self',this.value)">
+          <div class="mood-row">
+            <label>🪞 自我評價</label>
+            <div class="step-ctrl">
+              <button class="step-btn" onclick="stepMood('self',-1)">−</button>
+              <span class="step-val" id="val-self">3</span>
+              <button class="step-btn" onclick="stepMood('self',1)">+</button>
+            </div>
           </div>
-          <div class="slider-row">
-            <label><span>🤝 連結感</span><span id="val-connect">5</span></label>
-            <input type="range" class="range-good" min="1" max="10" value="5"
-              oninput="updateSlider('connect',this.value)">
+          <div class="mood-row">
+            <label>🤝 連結感</label>
+            <div class="step-ctrl">
+              <button class="step-btn" onclick="stepMood('connect',-1)">−</button>
+              <span class="step-val" id="val-connect">3</span>
+              <button class="step-btn" onclick="stepMood('connect',1)">+</button>
+            </div>
           </div>
         </div>
       </div>
@@ -546,27 +556,27 @@
           <div class="med-row">
             <label>抗憂鬱</label>
             <div class="step-ctrl">
-              <button class="step-btn" onclick="stepMed('ad',-0.5)">−</button>
-              <span class="step-val" id="med-ad">0.5</span>
-              <button class="step-btn" onclick="stepMed('ad',0.5)">+</button>
+              <button class="step-btn" onclick="stepMed('ad',-0.25)">−</button>
+              <span class="step-val" id="med-ad">0.25</span>
+              <button class="step-btn" onclick="stepMed('ad',0.25)">+</button>
               <span class="med-unit">顆</span>
             </div>
           </div>
           <div class="med-row">
             <label>抗焦慮</label>
             <div class="step-ctrl">
-              <button class="step-btn" onclick="stepMed('ax',-0.5)">−</button>
-              <span class="step-val" id="med-ax">0.5</span>
-              <button class="step-btn" onclick="stepMed('ax',0.5)">+</button>
+              <button class="step-btn" onclick="stepMed('ax',-0.25)">−</button>
+              <span class="step-val" id="med-ax">0.25</span>
+              <button class="step-btn" onclick="stepMed('ax',0.25)">+</button>
               <span class="med-unit">顆</span>
             </div>
           </div>
           <div class="med-row">
             <label>安眠藥</label>
             <div class="step-ctrl">
-              <button class="step-btn" onclick="stepMed('sl',-0.5)">−</button>
-              <span class="step-val" id="med-sl">0.5</span>
-              <button class="step-btn" onclick="stepMed('sl',0.5)">+</button>
+              <button class="step-btn" onclick="stepMed('sl',-0.25)">−</button>
+              <span class="step-val" id="med-sl">0.25</span>
+              <button class="step-btn" onclick="stepMed('sl',0.25)">+</button>
               <span class="med-unit">顆</span>
             </div>
           </div>
@@ -606,6 +616,7 @@
         <button class="factor-chip" onclick="toggleFactor(this,'bad')">🤯 過度完美主義</button>
         <button class="factor-chip" onclick="toggleFactor(this,'bad')">😶 感到孤立</button>
         <button class="factor-chip" onclick="toggleFactor(this,'bad')">💼 工作出狀況</button>
+        <button class="factor-chip" onclick="toggleFactor(this,'bad')">🤕 偏頭痛</button>
       </div>
     </div>
 
@@ -614,9 +625,10 @@
       <h3>今日私筆記</h3>
       <textarea class="note-input" id="noteInput"
         placeholder="今天有什麼想記下來的？發生了什麼事、有什麼感受，或一個小小的自我觀察…"></textarea>
-      <button class="submit-btn" onclick="saveRecord()">💾 儲存今日記錄</button>
+      <button class="submit-btn" id="saveBtnMain" onclick="saveRecord()">💾 儲存今日記錄</button>
     </div>
   </div>
+  </div><!-- /recordFormWrap -->
 
   <!-- ════ PANEL: 趨勢總覽 ════ -->
   <div class="panel" id="panel-overview">
@@ -679,9 +691,9 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
 /* ════ STATE ════ */
-const medState = { ad: 0.5, ax: 0.5, sl: 0.5 };
+const medState = { ad: 0, ax: 0, sl: 0 };
 let sleepQuality = 'ok';
-const sliderVals = { calm:6, anxiety:4, depress:3, energy:6, self:5, connect:5 };
+const sliderVals = { calm:3, anxiety:3, depress:3, energy:3, self:3, connect:3 };
 
 /* ════ DATE ════ */
 (function() {
@@ -701,22 +713,23 @@ function switchTab(name, btn) {
   if(name === 'log') renderLog();
 }
 
-/* ════ SLIDER ════ */
-function updateSlider(key, val) {
-  sliderVals[key] = +val;
-  document.getElementById('val-'+key).textContent = val;
+/* ════ MOOD STEPPER ════ */
+function stepMood(key, delta) {
+  sliderVals[key] = Math.min(5, Math.max(1, sliderVals[key] + delta));
+  document.getElementById('val-' + key).textContent = sliderVals[key];
   updateHero();
 }
 
 function calcScore() {
   const s = sliderVals;
+  // 1-5 scale → map to 2-10 for formula compatibility
   return Math.min(100, Math.max(0, Math.round(
-    (s.calm * 11 +
-    s.energy * 10 +
-    s.connect * 9 +
-    (10 - s.anxiety) * 10 +
-    (10 - s.depress) * 10 +
-    s.self * 8) / 5.8
+    (s.calm * 2 * 11 +
+    s.energy * 2 * 10 +
+    s.connect * 2 * 9 +
+    (6 - s.anxiety) * 2 * 10 +
+    (6 - s.depress) * 2 * 10 +
+    s.self * 2 * 8) / 5.8
   )));
 }
 
@@ -750,8 +763,9 @@ function updateHero() {
 
 /* ════ MEDICINE ════ */
 function stepMed(key, delta) {
-  medState[key] = Math.max(0, Math.round((medState[key] + delta) * 10) / 10);
-  document.getElementById('med-'+key).textContent = medState[key];
+  medState[key] = Math.max(0, Math.round((medState[key] + delta) * 100) / 100);
+  document.getElementById('med-'+key).textContent =
+    Number.isInteger(medState[key]) ? medState[key] : medState[key].toFixed(2);
 }
 
 /* ════ SLEEP QUALITY ════ */
@@ -769,7 +783,19 @@ function toggleFactor(el, type) {
 }
 
 /* ════ SAVE ════ */
+function todayKey() {
+  const d = new Date();
+  return `mc_saved_${d.getFullYear()}_${d.getMonth()+1}_${d.getDate()}`;
+}
+
+function lockRecordForm() {
+  document.getElementById('lockedBanner').classList.add('show');
+  document.getElementById('recordFormWrap').classList.add('form-locked');
+}
+
 function saveRecord() {
+  localStorage.setItem(todayKey(), '1');
+  lockRecordForm();
   showToast('✓ 今日記錄已儲存');
 }
 
@@ -844,36 +870,28 @@ function renderCharts() {
 }
 
 /* ════ LOG ════ */
-const sampleLogs = [
-  { date: '今天', score: 72, level: 'high', summary: '平靜感不錯，有跑步', med: '0.5 顆', tags: ['有運動', '良好互動'] },
-  { date: '昨天', score: 71, level: 'high', summary: '完成了一個小目標，心情有點成就感', med: '0.5 顆', tags: ['完成小目標'] },
-  { date: '前天', score: 65, level: 'high', summary: '有些疲憊但總體穩定', med: '0.5 顆', tags: ['睡前滑手機'] },
-  { date: '3天前', score: 78, level: 'high', summary: '週末放鬆，很難得的輕鬆感', med: '0.5 顆', tags: ['有運動', '曬到太陽', '靜心片刻'] },
-  { date: '4天前', score: 55, level: 'mid',  summary: '工作壓力大，有些緊繃', med: '0.5 顆', tags: ['高度壓力', '待辦事項堆積'] },
-  { date: '5天前', score: 41, level: 'low',  summary: '對自己有些失望的一天', med: '1 顆', tags: ['對自己失望', '反芻思考', '過度完美主義'] },
-  { date: '6天前', score: 63, level: 'mid',  summary: '普通的一天，沒什麼特別事', med: '0.5 顆', tags: [] },
-  { date: '7天前', score: 68, level: 'high', summary: '運動後心情明顯好一些', med: '0.5 顆', tags: ['有運動'] },
-];
-
 function renderLog() {
-  document.getElementById('logList').innerHTML = sampleLogs.map(l => `
-    <div class="log-item">
-      <div class="log-dot ${l.level}"></div>
-      <div class="log-info">
-        <div class="log-date">${l.date}</div>
-        <div class="log-summary">${l.summary}</div>
-        ${l.tags.length ? `<div class="log-tags">${l.tags.map(t=>`<span class="log-tag">${t}</span>`).join('')}</div>` : ''}
-      </div>
-      <div class="log-meta">
-        <div class="log-score" style="color:${l.level==='high'?'var(--good)':l.level==='mid'?'var(--warn)':'var(--danger)'}">${l.score}</div>
-        <div class="log-med">💊 ${l.med}</div>
-      </div>
+  const el = document.getElementById('logList');
+  el.innerHTML = `
+    <div style="text-align:center; padding:48px 24px; color:var(--muted);">
+      <div style="font-size:36px; margin-bottom:12px;">🌱</div>
+      <div style="font-size:15px; line-height:1.6;">還沒有紀錄<br>從今天開始，慢慢累積屬於你的軌跡</div>
     </div>
-  `).join('');
+  `;
 }
 
 /* ════ INIT ════ */
+// 初始化 med display（從 0 開始）
+['ad','ax','sl'].forEach(k => {
+  document.getElementById('med-'+k).textContent = '0';
+});
+
 updateHero();
+
+// 檢查今天是否已記錄
+if (localStorage.getItem(todayKey())) {
+  lockRecordForm();
+}
 </script>
 <!-- PWA Install Banner -->
 <div id="pwa-banner" style="display:none; position:fixed; bottom:80px; left:50%; transform:translateX(-50%); width:calc(100% - 40px); max-width:500px; background:#221f31; border:1px solid rgba(200,169,126,0.3); border-radius:16px; padding:16px 20px; z-index:9999; box-shadow:0 8px 32px rgba(0,0,0,0.4); display:none; align-items:center; gap:12px;">
