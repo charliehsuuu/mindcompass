@@ -538,7 +538,8 @@
         <h3>昨晚睡眠</h3>
         <div class="sleep-input-row">
           <input type="number" class="sleep-hour-input" id="sleepHour"
-            value="6.5" min="0" max="14" step="0.5">
+            value="" min="0" max="14" step="0.5" placeholder="—"
+            oninput="updateHero()">
           <span style="color:var(--muted);font-size:17px">小時</span>
         </div>
         <div class="sleep-quality">
@@ -603,6 +604,7 @@
       </div>
       <div style="font-size:16px;color:var(--danger);margin:14px 0 10px">✦ 負面因素（點選今天遇到的）</div>
       <div class="factor-grid">
+        <button class="factor-chip" onclick="toggleFactor(this,'bad')">🤕 偏頭痛</button>
         <button class="factor-chip" onclick="toggleFactor(this,'bad')">☕ 晚喝咖啡</button>
         <button class="factor-chip" onclick="toggleFactor(this,'bad')">📱 睡前滑手機</button>
         <button class="factor-chip" onclick="toggleFactor(this,'bad')">🥃 飲酒</button>
@@ -616,7 +618,6 @@
         <button class="factor-chip" onclick="toggleFactor(this,'bad')">🤯 過度完美主義</button>
         <button class="factor-chip" onclick="toggleFactor(this,'bad')">😶 感到孤立</button>
         <button class="factor-chip" onclick="toggleFactor(this,'bad')">💼 工作出狀況</button>
-        <button class="factor-chip" onclick="toggleFactor(this,'bad')">🤕 偏頭痛</button>
       </div>
     </div>
 
@@ -722,15 +723,38 @@ function stepMood(key, delta) {
 
 function calcScore() {
   const s = sliderVals;
-  // 1-5 scale → map to 2-10 for formula compatibility
-  return Math.min(100, Math.max(0, Math.round(
+
+  // ── 心情基礎分（1-5 scale，max ≈ 100）──
+  const base = Math.round(
     (s.calm * 2 * 11 +
     s.energy * 2 * 10 +
     s.connect * 2 * 9 +
     (6 - s.anxiety) * 2 * 10 +
     (6 - s.depress) * 2 * 10 +
     s.self * 2 * 8) / 5.8
-  )));
+  );
+
+  // ── 睡眠加減分（-10 ~ +8）──
+  const h = parseFloat(document.getElementById('sleepHour').value);
+  let sleepAdj = 0;
+  if (!isNaN(h) && h > 0) {
+    if      (h >= 7 && h <= 9) sleepAdj =  8;
+    else if (h >= 6 && h < 7)  sleepAdj =  4;
+    else if (h > 9 && h <= 10) sleepAdj =  4;
+    else if (h >= 5 && h < 6)  sleepAdj = -2;
+    else if (h > 10)            sleepAdj = -2;
+    else                        sleepAdj = -10; // < 5 小時
+  }
+  // 睡眠品質修正
+  if      (sleepQuality === 'good') sleepAdj += 2;
+  else if (sleepQuality === 'bad')  sleepAdj -= 3;
+
+  // ── 影響因素加減分（正面 +2／負面 -3，上下限 ±15）──
+  const goodCount = document.querySelectorAll('.factor-chip.selected-good').length;
+  const badCount  = document.querySelectorAll('.factor-chip.selected-bad').length;
+  const factorAdj = Math.max(-15, Math.min(15, goodCount * 2 - badCount * 3));
+
+  return Math.min(100, Math.max(0, base + sleepAdj + factorAdj));
 }
 
 function updateHero() {
@@ -773,6 +797,7 @@ function setSleepQ(q, btn) {
   sleepQuality = q;
   document.querySelectorAll('.sq-btn').forEach(b => b.className = 'sq-btn');
   btn.classList.add('active-'+q);
+  updateHero();
 }
 
 /* ════ FACTORS ════ */
@@ -780,6 +805,7 @@ function toggleFactor(el, type) {
   const has = el.classList.contains('selected-good') || el.classList.contains('selected-bad');
   el.classList.remove('selected-good','selected-bad');
   if(!has) el.classList.add('selected-'+type);
+  updateHero();
 }
 
 /* ════ SAVE ════ */
@@ -810,8 +836,8 @@ function showToast(msg) {
 let moodInst, medInst;
 function renderCharts() {
   const labels = [];
-  const moodData = [58,63,41,55,68,72,75,70,73,65,78,74,71,72];
-  const medData  = [1, 1, 1, 0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5];
+  const moodData = new Array(14).fill(null);
+  const medData  = new Array(14).fill(null);
   for(let i = 13; i >= 0; i--) {
     const d = new Date(); d.setDate(d.getDate() - i);
     labels.push(`${d.getMonth()+1}/${d.getDate()}`);
