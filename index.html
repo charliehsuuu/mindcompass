@@ -288,7 +288,21 @@
     box-shadow: 0 1px 6px rgba(0,0,0,0.05);
   }
   .locked-banner.show { display: flex; }
-  .form-locked { pointer-events: none; opacity: 0.45; }
+  .form-locked .save-btn { pointer-events: none; opacity: 0.5; }
+  .section-done-tag {
+    display: none;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--mood-dark);
+    background: var(--mood-bg);
+    border: 1px solid var(--mood-border);
+    padding: 2px 10px;
+    border-radius: 20px;
+    letter-spacing: 0.3px;
+  }
+  .card-sleep .section-done-tag { color: var(--sleep-dark); background: var(--sleep-bg); border-color: var(--sleep-border); }
+  .card-factor .section-done-tag { color: var(--factor-dark); background: var(--factor-bg); border-color: var(--factor-border); }
+  .section-done-tag.show { display: inline-block; }
 
   /* ── Medicine stepper ── */
   .med-inputs { display: flex; flex-direction: column; gap: 10px; }
@@ -576,10 +590,11 @@
     <!-- 今日鎖定 banner -->
     <div class="locked-banner" id="lockedBanner">
       <span style="font-size:22px">✅</span>
-      <div>
+      <div style="flex:1">
         <div style="font-weight:600;font-size:16px">今日記錄已完成</div>
         <div style="color:var(--muted);font-size:14px;margin-top:2px">明天再來繼續記錄 🌙</div>
       </div>
+      <button onclick="cancelTodayRecord()" style="background:none;border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:13px;color:var(--muted);cursor:pointer;flex-shrink:0;">取消紀錄</button>
     </div>
 
     <div id="recordFormWrap">
@@ -594,6 +609,7 @@
           </div>
           <div class="section-header-right">
             <span class="section-summary" id="summary-mood"></span>
+            <span class="section-done-tag" id="done-mood">✓ 已完成</span>
             <div class="section-toggle" id="toggle-mood">▲</div>
           </div>
         </div>
@@ -660,6 +676,7 @@
           </div>
           <div class="section-header-right">
             <span class="section-summary" id="summary-sleep"></span>
+            <span class="section-done-tag" id="done-sleep">✓ 已完成</span>
             <div class="section-toggle" id="toggle-sleep">▲</div>
           </div>
         </div>
@@ -741,6 +758,7 @@
         </div>
         <div class="section-header-right">
           <span class="section-summary" id="summary-factor"></span>
+          <span class="section-done-tag" id="done-factor">✓ 已完成</span>
           <div class="section-toggle" id="toggle-factor">▲</div>
         </div>
       </div>
@@ -1028,12 +1046,37 @@ function todayKey() {
 function lockRecordForm() {
   document.getElementById('lockedBanner').classList.add('show');
   document.getElementById('recordFormWrap').classList.add('form-locked');
+  // 各區塊顯示「已完成」標籤並收合
+  ['mood', 'sleep', 'factor'].forEach(id => {
+    updateSummary(id);
+    const body    = document.getElementById('body-' + id);
+    const toggle  = document.getElementById('toggle-' + id);
+    const summary = document.getElementById('summary-' + id);
+    const doneTag = document.getElementById('done-' + id);
+    if (!body.classList.contains('collapsed')) {
+      body.classList.add('collapsed');
+      toggle.classList.add('collapsed');
+    }
+    summary.classList.remove('show');
+    if (doneTag) doneTag.classList.add('show');
+  });
 }
 
 function saveRecord() {
   localStorage.setItem(todayKey(), '1');
   lockRecordForm();
   showToast('✓ 今日記錄已儲存');
+}
+
+function cancelTodayRecord() {
+  localStorage.removeItem(todayKey());
+  document.getElementById('lockedBanner').classList.remove('show');
+  document.getElementById('recordFormWrap').classList.remove('form-locked');
+  ['mood', 'sleep', 'factor'].forEach(id => {
+    const doneTag = document.getElementById('done-' + id);
+    if (doneTag) doneTag.classList.remove('show');
+  });
+  showToast('已取消今日紀錄');
 }
 
 function showToast(msg) {
