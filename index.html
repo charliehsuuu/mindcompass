@@ -310,19 +310,19 @@
   .med-row label { font-size: 17px; color: var(--muted); min-width: 76px; }
   .step-ctrl { display: flex; align-items: center; gap: 8px; }
   .step-btn {
-    width: 28px; height: 28px;
+    width: 40px; height: 40px;
     border: 1px solid var(--border);
-    border-radius: 8px;
+    border-radius: 10px;
     background: var(--surface);
     color: var(--text);
     cursor: pointer;
-    font-size: 20px;
+    font-size: 24px;
     display: flex; align-items: center; justify-content: center;
     transition: background 0.15s, color 0.15s;
     line-height: 1;
   }
   .step-btn:hover { background: var(--surface2); }
-  .step-val { font-weight: 600; min-width: 32px; text-align: center; color: var(--text); font-size: 17px; }
+  .step-val { font-weight: 600; min-width: 36px; text-align: center; color: var(--text); font-size: 20px; }
   .med-unit { font-size: 20px; color: var(--muted); }
 
   /* ── Factor chips ── */
@@ -720,22 +720,31 @@
         </div>
         <div class="section-body" id="body-sleep">
         <div style="display:flex;flex-direction:column;gap:12px">
-          <div class="sleep-input-row" style="gap:16px">
-            <div style="flex:1">
-              <div style="font-size:13px;color:var(--muted);margin-bottom:6px;letter-spacing:0.5px">總時數</div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div>
+              <div style="font-size:13px;color:var(--muted);margin-bottom:6px;letter-spacing:0.5px">總睡眠時間</div>
               <div style="display:flex;align-items:center;gap:8px">
-                <input type="number" class="sleep-hour-input" id="sleepHour"
-                  value="" min="0" max="14" step="0.5" placeholder="—"
+                <input type="number" class="sleep-hour-input" id="sleepHourH"
+                  value="" min="0" max="14" step="1" placeholder="—"
                   oninput="updateHero(); updateSummary('sleep');">
                 <span style="color:var(--muted);font-size:17px">小時</span>
+                <input type="number" class="sleep-hour-input" id="sleepHourM"
+                  value="" min="0" max="59" step="5" placeholder="—"
+                  style="width:64px"
+                  oninput="updateHero(); updateSummary('sleep');">
+                <span style="color:var(--muted);font-size:17px">分</span>
               </div>
             </div>
-            <div style="flex:1">
-              <div style="font-size:13px;color:var(--muted);margin-bottom:6px;letter-spacing:0.5px">深層睡眠</div>
+            <div>
+              <div style="font-size:13px;color:var(--muted);margin-bottom:6px;letter-spacing:0.5px">深層睡眠時間</div>
               <div style="display:flex;align-items:center;gap:8px">
-                <input type="number" class="sleep-hour-input" id="deepSleepHour"
-                  value="" min="0" max="8" step="0.5" placeholder="—">
+                <input type="number" class="sleep-hour-input" id="deepSleepHourH"
+                  value="" min="0" max="8" step="1" placeholder="—">
                 <span style="color:var(--muted);font-size:17px">小時</span>
+                <input type="number" class="sleep-hour-input" id="deepSleepHourM"
+                  value="" min="0" max="59" step="5" placeholder="—"
+                  style="width:64px">
+                <span style="color:var(--muted);font-size:17px">分</span>
               </div>
             </div>
           </div>
@@ -812,11 +821,9 @@
         <button class="factor-chip" onclick="toggleFactor(this,'good')">🎯 完成小目標</button>
         <button class="factor-chip" onclick="toggleFactor(this,'good')">🎵 享受音樂</button>
         <button class="factor-chip" onclick="toggleFactor(this,'good')">🍳 好好吃飯</button>
-        <button class="factor-chip" onclick="toggleFactor(this,'good')">📖 閱讀時光</button>
         <button class="factor-chip" onclick="toggleFactor(this,'good')">🌿 靜心片刻</button>
-        <button class="factor-chip" onclick="toggleFactor(this,'good')">🎨 創作手作</button>
         <button class="factor-chip" onclick="toggleFactor(this,'good')">🌙 按時就寢</button>
-        <button class="factor-chip" onclick="toggleFactor(this,'good')">💪 對自己溫柔</button>
+        <button class="factor-chip" onclick="toggleFactor(this,'good')">🚶 步行5000步</button>
       </div>
       <div style="font-size:16px;color:var(--danger);margin:14px 0 10px">✦ 負面因素（點選今天遇到的）</div>
       <div class="factor-grid">
@@ -972,7 +979,9 @@ function calcScore() {
                      n.anxiety*10 + n.depress*10 + n.self*8) / 58;
 
   // ── 睡眠分（0-100）：時數決定基礎分，品質微調 ──
-  const h = parseFloat(document.getElementById('sleepHour').value);
+  const sleepH = parseFloat(document.getElementById('sleepHourH').value) || 0;
+  const sleepM = parseFloat(document.getElementById('sleepHourM').value) || 0;
+  const h = sleepH + sleepM / 60;
   let sleepScore = 50; // 未填寫時給中間值
   if (!isNaN(h) && h > 0) {
     if      (h >= 7 && h <= 9)  sleepScore = 100;
@@ -989,7 +998,7 @@ function calcScore() {
   // 全選正面 → 100，全無 → 50，全選負面 → 0
   const goodCount = document.querySelectorAll('.factor-chip.selected-good').length;
   const badCount  = document.querySelectorAll('.factor-chip.selected-bad').length;
-  const factorScore = ((goodCount / 11) * 100 + (1 - badCount / 14) * 100) / 2;
+  const factorScore = ((goodCount / 9) * 100 + (1 - badCount / 14) * 100) / 2;
 
   // ── 加權平均：心情 25% + 睡眠 50% + 因素 25% ──
   return Math.min(100, Math.max(0, Math.round(
@@ -1063,9 +1072,13 @@ function updateSummary(id) {
     const s = sliderVals;
     el.textContent = `平靜 ${s.calm} · 焦慮 ${s.anxiety} · 活力 ${s.energy}`;
   } else if (id === 'sleep') {
-    const h  = document.getElementById('sleepHour').value  || '—';
-    const dh = document.getElementById('deepSleepHour').value || '—';
-    el.textContent = `${h}h · 深層 ${dh}h`;
+    const sH = document.getElementById('sleepHourH').value || '';
+    const sM = document.getElementById('sleepHourM').value || '';
+    const dH = document.getElementById('deepSleepHourH').value || '';
+    const dM = document.getElementById('deepSleepHourM').value || '';
+    const sleepStr = sH ? `${sH}h${sM ? sM+'m' : ''}` : '—';
+    const deepStr  = dH ? `${dH}h${dM ? dM+'m' : ''}` : '—';
+    el.textContent = `${sleepStr} · 深層 ${deepStr}`;
   } else if (id === 'factor') {
     const good = document.querySelectorAll('.factor-chip.selected-good').length;
     const bad  = document.querySelectorAll('.factor-chip.selected-bad').length;
