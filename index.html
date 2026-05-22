@@ -526,6 +526,41 @@
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+
+  /* ── Section save/cancel btn ── */
+  .section-save-btn {
+    padding: 7px 22px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.2s;
+    letter-spacing: 0.3px;
+  }
+  .section-save-btn:active { transform: scale(0.97); }
+  .card-mood .section-save-btn {
+    background: var(--mood-mid); color: #fff; border: 1.5px solid var(--mood-mid);
+  }
+  .card-mood .section-save-btn:hover { opacity: 0.85; }
+  .card-mood .section-save-btn.is-cancel {
+    background: transparent; color: var(--mood-mid); border: 1.5px solid var(--mood-mid);
+  }
+  .card-sleep .section-save-btn {
+    background: var(--sleep-mid); color: #fff; border: 1.5px solid var(--sleep-mid);
+  }
+  .card-sleep .section-save-btn:hover { opacity: 0.85; }
+  .card-sleep .section-save-btn.is-cancel {
+    background: transparent; color: var(--sleep-mid); border: 1.5px solid var(--sleep-mid);
+  }
+  .card-factor .section-save-btn {
+    background: var(--factor-mid); color: #fff; border: 1.5px solid var(--factor-mid);
+  }
+  .card-factor .section-save-btn:hover { opacity: 0.85; }
+  .card-factor .section-save-btn.is-cancel {
+    background: transparent; color: var(--factor-mid); border: 1.5px solid var(--factor-mid);
+  }
+
   @media (max-width: 620px) {
     .grid-2 { grid-template-columns: 1fr; }
     .mood-hero { flex-direction: column; text-align: center; }
@@ -664,6 +699,9 @@
             </div>
           </div>
         </div>
+        <div style="display:flex;justify-content:flex-end;margin-top:14px;">
+          <button id="section-btn-mood" class="section-save-btn" onclick="handleSectionBtn(event,'mood')">儲存</button>
+        </div>
         </div><!-- /body-mood -->
       </div>
 
@@ -745,6 +783,9 @@
             </div>
           </div>
         </div>
+        <div style="display:flex;justify-content:flex-end;margin-top:14px;">
+          <button id="section-btn-sleep" class="section-save-btn" onclick="handleSectionBtn(event,'sleep')">儲存</button>
+        </div>
         </div><!-- /body-sleep -->
       </div>
     </div>
@@ -794,6 +835,9 @@
         <button class="factor-chip" onclick="toggleFactor(this,'bad')">😶 感到孤立</button>
         <button class="factor-chip" onclick="toggleFactor(this,'bad')">💼 工作出狀況</button>
       </div>
+      <div style="display:flex;justify-content:flex-end;margin-top:14px;">
+        <button id="section-btn-factor" class="section-save-btn" onclick="handleSectionBtn(event,'factor')">儲存</button>
+      </div>
       </div><!-- /body-factor -->
     </div>
 
@@ -802,7 +846,6 @@
       <h3>今日私筆記</h3>
       <textarea class="note-input" id="noteInput"
         placeholder="今天有什麼想記下來的？發生了什麼事、有什麼感受，或一個小小的自我觀察…"></textarea>
-      <button class="submit-btn" id="saveBtnMain" onclick="saveRecord()">💾 儲存今日記錄</button>
     </div>
   </div>
   </div><!-- /recordFormWrap -->
@@ -885,6 +928,7 @@
 const medState = { ad: 0, ax: 0, sl: 0 };
 let sleepQuality = 'ok';
 const sliderVals = { calm:3, anxiety:3, depress:3, energy:3, self:3, connect:3 };
+const sectionSaved = { mood: false, sleep: false, factor: false };
 
 /* ════ DATE ════ */
 (function() {
@@ -1008,6 +1052,7 @@ function toggleSection(id) {
     updateSummary(id);
   } else {
     summary.classList.remove('show');
+    updateSectionBtn(id);
   }
 }
 
@@ -1035,6 +1080,49 @@ function toggleFactor(el, type) {
   if(!has) el.classList.add('selected-'+type);
   updateHero();
   updateSummary('factor');
+}
+
+/* ════ SECTION SAVE / CANCEL ════ */
+function handleSectionBtn(event, id) {
+  event.stopPropagation();
+  if (sectionSaved[id]) {
+    cancelSection(id);
+  } else {
+    saveSection(id);
+  }
+}
+
+function saveSection(id) {
+  sectionSaved[id] = true;
+  updateSectionBtn(id);
+  const body    = document.getElementById('body-' + id);
+  const toggle  = document.getElementById('toggle-' + id);
+  const summary = document.getElementById('summary-' + id);
+  updateSummary(id);
+  if (!body.classList.contains('collapsed')) {
+    body.classList.add('collapsed');
+    toggle.classList.add('collapsed');
+  }
+  summary.classList.add('show');
+  showToast('✓ 已儲存');
+}
+
+function cancelSection(id) {
+  sectionSaved[id] = false;
+  updateSectionBtn(id);
+  showToast('已取消');
+}
+
+function updateSectionBtn(id) {
+  const btn = document.getElementById('section-btn-' + id);
+  if (!btn) return;
+  if (sectionSaved[id]) {
+    btn.textContent = '取消';
+    btn.classList.add('is-cancel');
+  } else {
+    btn.textContent = '儲存';
+    btn.classList.remove('is-cancel');
+  }
 }
 
 /* ════ SAVE ════ */
