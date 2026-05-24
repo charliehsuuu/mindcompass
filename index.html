@@ -3,7 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MindCompass — 夜空星空設計稿</title>
+<title>MindCompass</title>
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#0a0c1a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MindCompass">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<meta name="msapplication-TileColor" content="#0a0c1a">
+<meta name="msapplication-TileImage" content="./icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -708,30 +717,61 @@
 
   <!-- Mood Hero -->
   <div class="mood-hero">
-    <div class="mood-ring-wrap">
-      <svg width="128" height="128" viewBox="0 0 128 128">
-        <circle cx="64" cy="64" r="52" fill="none" stroke="rgba(126,148,220,0.18)" stroke-width="10"/>
-        <circle id="moodArc" cx="64" cy="64" r="52" fill="none"
-          stroke="url(#arcGrad)" stroke-width="10"
-          stroke-linecap="round"
-          stroke-dasharray="326.7" stroke-dashoffset="98"
-          style="transition: stroke-dashoffset 0.5s ease; filter: drop-shadow(0 0 6px rgba(93,224,216,0.5))"/>
-        <defs>
-          <linearGradient id="arcGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" style="stop-color:#5de0d8"/>
-            <stop offset="100%" style="stop-color:#9b8ec4"/>
-          </linearGradient>
-        </defs>
-      </svg>
-      <div class="mood-score-label">
-        <div class="score" id="heroScore">72</div>
-        <div class="score-sub">情緒指數</div>
+    <div class="mood-rings">
+      <!-- 今日狀態圓圈 -->
+      <div class="mood-ring-wrap">
+        <svg width="112" height="112" viewBox="0 0 128 128">
+          <circle cx="64" cy="64" r="52" fill="none" stroke="rgba(126,148,220,0.18)" stroke-width="10"/>
+          <circle id="moodArc" cx="64" cy="64" r="52" fill="none"
+            stroke="url(#arcGrad)" stroke-width="10"
+            stroke-linecap="round"
+            stroke-dasharray="326.7" stroke-dashoffset="98"
+            style="transition: stroke-dashoffset 0.5s ease"/>
+          <defs>
+            <linearGradient id="arcGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" style="stop-color:#5de0d8"/>
+              <stop offset="100%" style="stop-color:#9b8ec4"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <div class="mood-score-label">
+          <div class="score" id="heroScore">72</div>
+          <div class="score-sub">今日狀態</div>
+        </div>
+      </div>
+
+      <!-- 趨勢警示圓圈 -->
+      <div class="mood-ring-wrap" id="trendRingWrap">
+        <svg width="112" height="112" viewBox="0 0 128 128">
+          <circle cx="64" cy="64" r="52" fill="none" stroke="rgba(126,148,220,0.18)" stroke-width="10"/>
+          <circle id="trendArc" cx="64" cy="64" r="52" fill="none"
+            stroke="url(#trendArcGrad)" stroke-width="10"
+            stroke-linecap="round"
+            stroke-dasharray="326.7" stroke-dashoffset="326.7"
+            style="transition: stroke-dashoffset 0.5s ease"/>
+          <defs>
+            <linearGradient id="trendArcGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" style="stop-color:#9b8ec4"/>
+              <stop offset="100%" style="stop-color:#5de0d8"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <div class="mood-score-label">
+          <div class="score" id="trendScore">—</div>
+          <div class="score-sub">趨勢警示</div>
+        </div>
       </div>
     </div>
+
     <div class="mood-hero-text">
+      <div class="final-score-row">
+        <span class="final-score-label">最終情緒指數</span>
+        <span class="final-score-val" id="finalScore">72</span>
+      </div>
       <h2 id="heroTitle">今天狀態還不錯</h2>
       <p id="heroDesc">情緒指數在穩定區間。這種狀態下的判斷比較客觀，如果有重要決定，現在是適合思考的時機。</p>
       <span class="mood-tag" id="heroTag">✦ 可以信任今天的判斷</span>
+      <div class="trend-alert" id="trendAlert"></div>
     </div>
   </div>
 
@@ -744,6 +784,17 @@
 
   <!-- ════ PANEL: 今日記錄 ════ -->
   <div class="panel active" id="panel-record">
+
+    <!-- 今日鎖定 banner -->
+    <div class="locked-banner" id="lockedBanner">
+      <span style="font-size:22px">✅</span>
+      <div style="flex:1">
+        <div style="font-weight:600;font-size:16px">今日記錄已完成</div>
+        <div style="color:var(--muted);font-size:14px;margin-top:2px">明天再來繼續記錄 🌙</div>
+      </div>
+      <button onclick="cancelTodayRecord()" style="background:none;border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:13px;color:var(--muted);cursor:pointer;flex-shrink:0;">取消紀錄</button>
+    </div>
+
     <div id="recordFormWrap">
     <div class="grid-2">
 
@@ -814,7 +865,7 @@
         <div style="display:flex;justify-content:flex-end;margin-top:14px;">
           <button id="section-btn-mood" class="section-save-btn" onclick="handleSectionBtn(event,'mood')">儲存</button>
         </div>
-        </div>
+        </div><!-- /body-mood -->
       </div>
 
       <!-- 睡眠 + 藥量 -->
@@ -836,18 +887,26 @@
             <div>
               <div style="font-size:13px;color:var(--muted);margin-bottom:6px;letter-spacing:0.5px">總睡眠時間</div>
               <div style="display:flex;align-items:center;gap:8px">
-                <input type="number" class="sleep-hour-input" id="sleepHourH" value="" min="0" max="14" step="1" placeholder="—" oninput="updateHero();">
+                <input type="number" class="sleep-hour-input" id="sleepHourH"
+                  value="" min="0" max="14" step="1" placeholder="—"
+                  oninput="updateHero(); updateSummary('sleep');">
                 <span style="color:var(--muted);font-size:17px">小時</span>
-                <input type="number" class="sleep-hour-input" id="sleepHourM" value="" min="0" max="59" step="5" placeholder="—" style="width:64px" oninput="updateHero();">
+                <input type="number" class="sleep-hour-input" id="sleepHourM"
+                  value="" min="0" max="59" step="5" placeholder="—"
+                  style="width:64px"
+                  oninput="updateHero(); updateSummary('sleep');">
                 <span style="color:var(--muted);font-size:17px">分</span>
               </div>
             </div>
             <div>
               <div style="font-size:13px;color:var(--muted);margin-bottom:6px;letter-spacing:0.5px">深層睡眠時間</div>
               <div style="display:flex;align-items:center;gap:8px">
-                <input type="number" class="sleep-hour-input" id="deepSleepHourH" value="" min="0" max="8" step="1" placeholder="—">
+                <input type="number" class="sleep-hour-input" id="deepSleepHourH"
+                  value="" min="0" max="8" step="1" placeholder="—">
                 <span style="color:var(--muted);font-size:17px">小時</span>
-                <input type="number" class="sleep-hour-input" id="deepSleepHourM" value="" min="0" max="59" step="5" placeholder="—" style="width:64px">
+                <input type="number" class="sleep-hour-input" id="deepSleepHourM"
+                  value="" min="0" max="59" step="5" placeholder="—"
+                  style="width:64px">
                 <span style="color:var(--muted);font-size:17px">分</span>
               </div>
             </div>
@@ -861,14 +920,18 @@
             </div>
           </div>
         </div>
+
         <div class="divider"></div>
-        <div style="font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:12px">昨晚服藥量</div>
+
+        <div style="font-size:17px;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:12px">
+          昨晚服藥量
+        </div>
         <div class="med-inputs">
           <div class="med-row">
             <label>抗憂鬱</label>
             <div class="step-ctrl">
               <button class="step-btn" onclick="stepMed('ad',-0.25)">−</button>
-              <span class="step-val" id="med-ad">0</span>
+              <span class="step-val" id="med-ad">0.25</span>
               <button class="step-btn" onclick="stepMed('ad',0.25)">+</button>
               <span class="med-unit">顆</span>
             </div>
@@ -877,7 +940,7 @@
             <label>抗焦慮</label>
             <div class="step-ctrl">
               <button class="step-btn" onclick="stepMed('ax',-0.25)">−</button>
-              <span class="step-val" id="med-ax">0</span>
+              <span class="step-val" id="med-ax">0.25</span>
               <button class="step-btn" onclick="stepMed('ax',0.25)">+</button>
               <span class="med-unit">顆</span>
             </div>
@@ -886,7 +949,7 @@
             <label>安眠藥</label>
             <div class="step-ctrl">
               <button class="step-btn" onclick="stepMed('sl',-0.25)">−</button>
-              <span class="step-val" id="med-sl">0</span>
+              <span class="step-val" id="med-sl">0.25</span>
               <button class="step-btn" onclick="stepMed('sl',0.25)">+</button>
               <span class="med-unit">顆</span>
             </div>
@@ -895,7 +958,7 @@
         <div style="display:flex;justify-content:flex-end;margin-top:14px;">
           <button id="section-btn-sleep" class="section-save-btn" onclick="handleSectionBtn(event,'sleep')">儲存</button>
         </div>
-        </div>
+        </div><!-- /body-sleep -->
       </div>
     </div>
 
@@ -945,16 +1008,17 @@
       <div style="display:flex;justify-content:flex-end;margin-top:14px;">
         <button id="section-btn-factor" class="section-save-btn" onclick="handleSectionBtn(event,'factor')">儲存</button>
       </div>
-      </div>
+      </div><!-- /body-factor -->
     </div>
 
     <!-- 備注 -->
     <div class="card">
       <h3>今日私筆記</h3>
-      <textarea class="note-input" id="noteInput" placeholder="今天有什麼想記下來的？發生了什麼事、有什麼感受，或一個小小的自我觀察…"></textarea>
-    </div>
+      <textarea class="note-input" id="noteInput"
+        placeholder="今天有什麼想記下來的？發生了什麼事、有什麼感受，或一個小小的自我觀察…"></textarea>
     </div>
   </div>
+  </div><!-- /recordFormWrap -->
 
   <!-- ════ PANEL: 趨勢總覽 ════ -->
   <div class="panel" id="panel-overview">
@@ -965,40 +1029,53 @@
         <div class="stat-change up">↑ +8 較上週</div>
       </div>
       <div class="stat-card">
-        <div class="stat-val" style="color:var(--cyan)">0.5</div>
+        <div class="stat-val" style="color:var(--accent)">0.5</div>
         <div class="stat-lbl">用藥 / 昨晚 (顆)</div>
         <div class="stat-change neu">→ 維持穩定</div>
       </div>
       <div class="stat-card">
-        <div class="stat-val" style="color:var(--purple2)">6.5h</div>
+        <div class="stat-val" style="color:var(--accent2)">6.5h</div>
         <div class="stat-lbl">平均睡眠</div>
         <div class="stat-change up">↑ +0.5h</div>
       </div>
     </div>
+
     <div class="insight-banner">
       <h3>✦ 本週觀察洞察</h3>
       <p>過去 7 天中，<strong>有運動的日子</strong>情緒指數平均高出 18 分。<strong>睡前滑手機</strong>與隔天焦慮感有明顯正相關。週三低落（指數 41）發生在對自己失望後的第二天——你的情緒有延遲效應，值得留意。</p>
     </div>
+
     <div class="card" style="margin-bottom:16px">
       <h3>情緒指數趨勢（近 14 天）</h3>
-      <div class="chart-wrap"><canvas id="moodChart"></canvas></div>
+      <div class="chart-wrap">
+        <canvas id="moodChart"></canvas>
+      </div>
       <div style="display:flex;gap:16px;margin-top:8px">
-        <span style="font-size:14px;color:var(--good)">● 65+ 穩定</span>
-        <span style="font-size:14px;color:var(--warn)">● 40–64 普通</span>
-        <span style="font-size:14px;color:var(--danger)">● &lt;40 需關注</span>
+        <span style="font-size:17px;color:var(--good)">● 65+ 穩定</span>
+        <span style="font-size:17px;color:var(--warn)">● 40–64 普通</span>
+        <span style="font-size:17px;color:var(--danger)">● &lt;40 需關注</span>
       </div>
     </div>
-    <div class="card" style="margin-bottom:16px">
+
+    <div class="card">
       <h3>用藥量趨勢（近 14 天）</h3>
-      <div class="chart-wrap sm"><canvas id="medChart"></canvas></div>
+      <div class="chart-wrap sm">
+        <canvas id="medChart"></canvas>
+      </div>
     </div>
+
     <div class="card" style="margin-bottom:16px">
       <h3>睡眠時間趨勢（近 14 天）</h3>
-      <div class="chart-wrap sm"><canvas id="sleepChart"></canvas></div>
+      <div class="chart-wrap sm">
+        <canvas id="sleepChart"></canvas>
+      </div>
     </div>
+
     <div class="card">
       <h3>深層睡眠趨勢（近 14 天）</h3>
-      <div class="chart-wrap sm"><canvas id="deepSleepChart"></canvas></div>
+      <div class="chart-wrap sm">
+        <canvas id="deepSleepChart"></canvas>
+      </div>
     </div>
   </div>
 
@@ -1017,6 +1094,724 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
+/* ════ STATE ════ */
+const medState = { ad: 0, ax: 0, sl: 0 };
+let sleepQuality = 'ok';
+const sliderVals = { calm:3, anxiety:3, depress:3, energy:3, self:3, connect:3 };
+const sectionSaved = { mood: false, sleep: false, factor: false };
+
+/* ════ DATE ════ */
+(function() {
+  const d = new Date();
+  const days = ['日','一','二','三','四','五','六'];
+  document.getElementById('dateBadge').textContent =
+    `${d.getFullYear()} / ${d.getMonth()+1} / ${d.getDate()}　週${days[d.getDay()]}`;
+})();
+
+/* ════ TAB ════ */
+function switchTab(name, btn) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  btn.classList.add('active');
+  if(name === 'overview') renderCharts();
+  if(name === 'log') renderLog();
+}
+
+/* ════ MOOD STEPPER ════ */
+function stepMood(key, delta) {
+  sliderVals[key] = Math.min(5, Math.max(1, sliderVals[key] + delta));
+  document.getElementById('val-' + key).textContent = sliderVals[key];
+  updateHero();
+  updateSummary('mood');
+}
+
+function calcScore() {
+  const s = sliderVals;
+
+  // ── 心情分（0-100）：6 指標各自正規化後加權平均 ──
+  const n = {
+    calm:    (s.calm - 1) / 4 * 100,
+    energy:  (s.energy - 1) / 4 * 100,
+    connect: (s.connect - 1) / 4 * 100,
+    anxiety: (5 - s.anxiety) / 4 * 100,  // 反向：越焦慮分越低
+    depress: (5 - s.depress) / 4 * 100,  // 反向：越低落分越低
+    self:    (s.self - 1) / 4 * 100,
+  };
+  const moodScore = (n.calm*11 + n.energy*10 + n.connect*9 +
+                     n.anxiety*10 + n.depress*10 + n.self*8) / 58;
+
+  // ── 睡眠分（0-100）：時數決定基礎分，品質微調 ──
+  const sleepH = parseFloat(document.getElementById('sleepHourH').value) || 0;
+  const sleepM = parseFloat(document.getElementById('sleepHourM').value) || 0;
+  const h = sleepH + sleepM / 60;
+  let sleepScore = 50; // 未填寫時給中間值
+  if (!isNaN(h) && h > 0) {
+    if      (h >= 7 && h <= 9)  sleepScore = 100;
+    else if (h >= 6 && h < 7)   sleepScore = 80;
+    else if (h > 9 && h <= 10)  sleepScore = 80;
+    else if (h >= 5 && h < 6)   sleepScore = 55;
+    else if (h > 10 && h <= 11) sleepScore = 60;
+    else if (h >= 4 && h < 5)   sleepScore = 30;
+    else                         sleepScore = 10; // 未滿 4 小時
+  }
+  // 自我評估（沉穩/普通/淺眠）僅供記錄，不影響分數
+
+  // ── 因素分（0-100）：正面 / 負面各自貢獻一半 ──
+  // 全選正面 → 100，全無 → 50，全選負面 → 0
+  const goodCount = document.querySelectorAll('.factor-chip.selected-good').length;
+  const badCount  = document.querySelectorAll('.factor-chip.selected-bad').length;
+  const factorScore = ((goodCount / 9) * 100 + (1 - badCount / 14) * 100) / 2;
+
+  // ── 加權平均：心情 25% + 睡眠 50% + 因素 25% ──
+  return Math.min(100, Math.max(0, Math.round(
+    moodScore * 0.25 + sleepScore * 0.50 + factorScore * 0.25
+  )));
+}
+
+function updateHero() {
+  const todayScore = calcScore();
+
+  // 今日狀態圓圈
+  document.getElementById('heroScore').textContent = todayScore;
+  const circ = 326.7;
+  document.getElementById('moodArc').style.strokeDashoffset = circ - (circ * todayScore / 100);
+
+  // 趨勢警示計算
+  const trend = calcTrend();
+  const trendEl = document.getElementById('trendScore');
+  const trendArc = document.getElementById('trendArc');
+  const trendRingWrap = document.getElementById('trendRingWrap');
+  const alertEl = document.getElementById('trendAlert');
+
+  let finalScore;
+  if (trend === null) {
+    // 未滿 14 天：只用今日狀態
+    trendEl.textContent = '—';
+    trendArc.style.strokeDashoffset = circ; // 空圈
+    trendRingWrap.classList.add('dimmed');
+    finalScore = todayScore;
+
+    // 顯示「累積中」提示
+    const recordedDays = getRecordedDayCount();
+    alertEl.className = 'trend-alert show level-info';
+    alertEl.textContent = `📍 累積記錄 ${recordedDays}/14 天，滿 14 天後啟動趨勢分析`;
+  } else {
+    // 滿 14 天：兩個分數並列
+    trendEl.textContent = trend.score;
+    trendArc.style.strokeDashoffset = circ - (circ * trend.score / 100);
+    trendRingWrap.classList.remove('dimmed');
+    finalScore = Math.round(todayScore * 0.6 + trend.score * 0.4);
+
+    // 趨勢提醒（兩層門檻）
+    if (trend.alertLevel === 'strong') {
+      alertEl.className = 'trend-alert show level-strong';
+      alertEl.textContent = `🛑 ${trend.alertMsg}`;
+    } else if (trend.alertLevel === 'mild') {
+      alertEl.className = 'trend-alert show level-mild';
+      alertEl.textContent = `⚠️ ${trend.alertMsg}`;
+    } else {
+      alertEl.className = 'trend-alert';
+      alertEl.textContent = '';
+    }
+  }
+
+  // 最終情緒指數
+  document.getElementById('finalScore').textContent = finalScore;
+
+  const title = document.getElementById('heroTitle');
+  const desc  = document.getElementById('heroDesc');
+  const tag   = document.getElementById('heroTag');
+
+  // Hero 標題/描述依「最終分數」判斷
+  if(finalScore >= 65) {
+    title.textContent = '今天狀態還不錯';
+    desc.textContent  = '情緒指數在穩定區間。這種狀態下的判斷比較客觀，如果有重要決定，現在是適合思考的時機。';
+    tag.textContent   = '✦ 可以信任今天的判斷';
+    tag.style.cssText = 'background:rgba(126,200,160,0.12);color:var(--good)';
+  } else if(finalScore >= 40) {
+    title.textContent = '今天狀態普通，留意自己';
+    desc.textContent  = '指數在中間地帶。重大決定建議先暫緩，先把自己照顧好，等狀態回升再說。';
+    tag.textContent   = '⚠ 重大決定先緩一緩';
+    tag.style.cssText = 'background:rgba(232,184,109,0.12);color:var(--warn)';
+  } else {
+    title.textContent = '今天狀態需要特別關注';
+    desc.textContent  = '情緒指數偏低。這時候的感受可能比實際更負面，你的判斷力暫時在低谷，請先善待自己。';
+    tag.textContent   = '🛑 今天不適合做重要決定';
+    tag.style.cssText = 'background:rgba(232,125,125,0.12);color:var(--danger)';
+  }
+}
+
+/* ════ 歷史資料 & 趨勢計算 ════ */
+
+// 日期 key 工具
+function dateToKey(d) {
+  return `mc_day_${d.getFullYear()}_${d.getMonth()+1}_${d.getDate()}`;
+}
+function todayDate() { return new Date(); }
+
+// 取得歷史中已記錄的「天數」
+function getRecordedDayCount() {
+  let count = 0;
+  // 往回掃 90 天
+  for (let i = 0; i < 90; i++) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    if (localStorage.getItem(dateToKey(d))) count++;
+  }
+  return count;
+}
+
+// 取得近 N 天的「今日狀態分」陣列（含補值）
+// 回傳格式：[{date, score, isFilled}, ...]，新到舊
+function getRecentScores(days) {
+  const arr = [];
+  for (let i = 0; i < days; i++) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const raw = localStorage.getItem(dateToKey(d));
+    if (raw) {
+      try {
+        const data = JSON.parse(raw);
+        arr.push({ date: new Date(d), score: data.score, isFilled: false });
+      } catch (e) {
+        arr.push({ date: new Date(d), score: null, isFilled: true });
+      }
+    } else {
+      arr.push({ date: new Date(d), score: null, isFilled: true });
+    }
+  }
+  return arr;
+}
+
+// 用前後鄰近平均值補缺漏
+function fillMissingScores(scores) {
+  const filled = scores.slice();
+  for (let i = 0; i < filled.length; i++) {
+    if (filled[i].score === null) {
+      // 找前一個有值的
+      let prev = null;
+      for (let j = i + 1; j < scores.length; j++) {
+        if (scores[j].score !== null) { prev = scores[j].score; break; }
+      }
+      // 找後一個有值的
+      let next = null;
+      for (let j = i - 1; j >= 0; j--) {
+        if (scores[j].score !== null) { next = scores[j].score; break; }
+      }
+      if (prev !== null && next !== null) {
+        filled[i].score = (prev + next) / 2;
+      } else if (prev !== null) {
+        filled[i].score = prev;
+      } else if (next !== null) {
+        filled[i].score = next;
+      } else {
+        filled[i].score = 50; // 完全沒資料給中間值
+      }
+    }
+  }
+  return filled;
+}
+
+function calcTrend() {
+  // 至少需要 14 天的記錄才啟動
+  if (getRecordedDayCount() < 14) return null;
+
+  // 取近 14 天（不含今天）的分數，用昨天為基準往前 14 天
+  // 因為今天的分數還在輸入中，會干擾
+  const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
+  const all = [];
+  for (let i = 0; i < 14; i++) {
+    const d = new Date(yesterday); d.setDate(d.getDate() - i);
+    const raw = localStorage.getItem(dateToKey(d));
+    if (raw) {
+      try {
+        const data = JSON.parse(raw);
+        all.push({ score: data.score });
+      } catch (e) { all.push({ score: null }); }
+    } else {
+      all.push({ score: null });
+    }
+  }
+  // 補值
+  const filled = fillMissingScores(all);
+  const scores = filled.map(x => x.score);
+
+  // 拆兩半：近 7 天 vs 前 7 天
+  const recent7 = scores.slice(0, 7);
+  const prev7   = scores.slice(7, 14);
+
+  const avg = a => a.reduce((s,x)=>s+x,0) / a.length;
+  const std = a => {
+    const m = avg(a);
+    return Math.sqrt(a.reduce((s,x)=>s+(x-m)*(x-m),0) / a.length);
+  };
+
+  const recentAvg = avg(recent7);
+  const prevAvg   = avg(prev7);
+  const diff = recentAvg - prevAvg;  // 正數 = 在好轉，負數 = 在下滑
+
+  // ── 訊號 A：穩定下滑（70%）──
+  let signalA;
+  if (diff >= 3)        signalA = 100;
+  else if (diff >= 0)   signalA = 80;
+  else if (diff >= -3)  signalA = 60;
+  else if (diff >= -6)  signalA = 35;
+  else                  signalA = 10;
+
+  // 加強條件：近 7 天逐日斜率為負的天數
+  let negDays = 0;
+  for (let i = 0; i < recent7.length - 1; i++) {
+    if (recent7[i] < recent7[i+1]) negDays++; // recent7[0] 是最新一天
+  }
+  if (negDays >= 4) signalA = Math.max(0, signalA - 10);
+
+  // ── 訊號 B：波動加劇（30%）──
+  const recentStd = std(recent7);
+  const prevStd   = std(prev7);
+  const stdDiff   = recentStd - prevStd;
+  let signalB;
+  if (stdDiff <= -2)     signalB = 100;
+  else if (stdDiff <= 2) signalB = 75;
+  else                   signalB = 40;
+
+  const trendScore = Math.round(signalA * 0.7 + signalB * 0.3);
+
+  // ── 兩層警示判斷 ──
+  let alertLevel = null;
+  let alertMsg = '';
+  if (diff <= -6 || negDays >= 4) {
+    alertLevel = 'strong';
+    alertMsg = '最近 7 天狀態緩慢下滑，建議放慢腳步檢視壓力源';
+  } else if (diff <= -3) {
+    alertLevel = 'mild';
+    alertMsg = '近期狀態有點下滑，記得多照顧自己';
+  } else if (stdDiff > 5) {
+    alertLevel = 'mild';
+    alertMsg = '最近情緒波動較大，留意自己的節奏';
+  }
+
+  return {
+    score: trendScore,
+    diff: diff,
+    negDays: negDays,
+    stdDiff: stdDiff,
+    alertLevel: alertLevel,
+    alertMsg: alertMsg
+  };
+}
+
+/* ════ MEDICINE ════ */
+function stepMed(key, delta) {
+  medState[key] = Math.max(0, Math.round((medState[key] + delta) * 100) / 100);
+  document.getElementById('med-'+key).textContent =
+    Number.isInteger(medState[key]) ? medState[key] : medState[key].toFixed(2);
+}
+
+/* ════ SLEEP QUALITY ════ */
+function setSleepQ(q, btn) {
+  sleepQuality = q;
+  document.querySelectorAll('.sq-btn').forEach(b => b.className = 'sq-btn');
+  btn.classList.add('active-'+q);
+  updateHero();
+}
+
+/* ════ COLLAPSE ════ */
+function toggleSection(id) {
+  const body   = document.getElementById('body-' + id);
+  const toggle = document.getElementById('toggle-' + id);
+  const summary = document.getElementById('summary-' + id);
+  const isCollapsed = body.classList.toggle('collapsed');
+  toggle.classList.toggle('collapsed', isCollapsed);
+  if (isCollapsed) {
+    summary.classList.add('show');
+    updateSummary(id);
+  } else {
+    summary.classList.remove('show');
+    updateSectionBtn(id);
+  }
+}
+
+function updateSummary(id) {
+  const el = document.getElementById('summary-' + id);
+  if (!el) return;
+  if (id === 'mood') {
+    const s = sliderVals;
+    el.textContent = `平靜 ${s.calm} · 焦慮 ${s.anxiety} · 活力 ${s.energy}`;
+  } else if (id === 'sleep') {
+    const sH = document.getElementById('sleepHourH').value || '';
+    const sM = document.getElementById('sleepHourM').value || '';
+    const dH = document.getElementById('deepSleepHourH').value || '';
+    const dM = document.getElementById('deepSleepHourM').value || '';
+    const sleepStr = sH ? `${sH}h${sM ? sM+'m' : ''}` : '—';
+    const deepStr  = dH ? `${dH}h${dM ? dM+'m' : ''}` : '—';
+    el.textContent = `${sleepStr} · 深層 ${deepStr}`;
+  } else if (id === 'factor') {
+    const good = document.querySelectorAll('.factor-chip.selected-good').length;
+    const bad  = document.querySelectorAll('.factor-chip.selected-bad').length;
+    el.textContent = `✦ ${good}　✕ ${bad}`;
+  }
+}
+
+/* ════ FACTORS ════ */
+function toggleFactor(el, type) {
+  const has = el.classList.contains('selected-good') || el.classList.contains('selected-bad');
+  el.classList.remove('selected-good','selected-bad');
+  if(!has) el.classList.add('selected-'+type);
+  updateHero();
+  updateSummary('factor');
+}
+
+/* ════ SECTION SAVE / CANCEL ════ */
+function handleSectionBtn(event, id) {
+  event.stopPropagation();
+  if (sectionSaved[id]) {
+    cancelSection(id);
+  } else {
+    saveSection(id);
+  }
+}
+
+function saveSection(id) {
+  sectionSaved[id] = true;
+  updateSectionBtn(id);
+  const body    = document.getElementById('body-' + id);
+  const toggle  = document.getElementById('toggle-' + id);
+  const summary = document.getElementById('summary-' + id);
+  updateSummary(id);
+  if (!body.classList.contains('collapsed')) {
+    body.classList.add('collapsed');
+    toggle.classList.add('collapsed');
+  }
+  summary.classList.add('show');
+
+  // 三個區段都已儲存 → 自動寫入今日完整紀錄
+  if (sectionSaved.mood && sectionSaved.sleep && sectionSaved.factor) {
+    saveRecord();
+  } else {
+    showToast('✓ 已儲存');
+  }
+}
+
+function cancelSection(id) {
+  sectionSaved[id] = false;
+  updateSectionBtn(id);
+  // 若之前已是「今日完成」狀態，取消其中一段 → 移除完整紀錄
+  if (localStorage.getItem(todayDayKey())) {
+    localStorage.removeItem(todayDayKey());
+    localStorage.removeItem(todayKey());
+    document.getElementById('lockedBanner').classList.remove('show');
+    document.getElementById('recordFormWrap').classList.remove('form-locked');
+    ['mood', 'sleep', 'factor'].forEach(x => {
+      const doneTag = document.getElementById('done-' + x);
+      if (doneTag) doneTag.classList.remove('show');
+    });
+    updateHero();
+  }
+  showToast('已取消');
+}
+
+function updateSectionBtn(id) {
+  const btn = document.getElementById('section-btn-' + id);
+  if (!btn) return;
+  if (sectionSaved[id]) {
+    btn.textContent = '取消';
+    btn.classList.add('is-cancel');
+  } else {
+    btn.textContent = '儲存';
+    btn.classList.remove('is-cancel');
+  }
+}
+
+/* ════ SAVE ════ */
+function todayKey() {
+  // 維持舊 key 用作「今日是否已記錄」flag
+  const d = new Date();
+  return `mc_saved_${d.getFullYear()}_${d.getMonth()+1}_${d.getDate()}`;
+}
+
+function todayDayKey() {
+  // 新 key：儲存當日完整資料
+  return dateToKey(new Date());
+}
+
+function collectDailyData() {
+  const sleepH = parseFloat(document.getElementById('sleepHourH').value) || 0;
+  const sleepM = parseFloat(document.getElementById('sleepHourM').value) || 0;
+  const deepH  = parseFloat(document.getElementById('deepSleepHourH').value) || 0;
+  const deepM  = parseFloat(document.getElementById('deepSleepHourM').value) || 0;
+
+  const goodFactors = [];
+  const badFactors  = [];
+  document.querySelectorAll('.factor-chip.selected-good').forEach(el => goodFactors.push(el.textContent.trim()));
+  document.querySelectorAll('.factor-chip.selected-bad').forEach(el  => badFactors.push(el.textContent.trim()));
+
+  return {
+    score: calcScore(),
+    timestamp: Date.now(),
+    mood: { ...sliderVals },
+    sleep: {
+      totalHours: sleepH + sleepM / 60,
+      deepHours: deepH + deepM / 60,
+      quality: sleepQuality
+    },
+    meds: { ...medState },
+    factors: { good: goodFactors, bad: badFactors },
+    note: document.getElementById('noteInput').value || ''
+  };
+}
+
+function lockRecordForm() {
+  document.getElementById('lockedBanner').classList.add('show');
+  document.getElementById('recordFormWrap').classList.add('form-locked');
+  // 各區塊顯示「已完成」標籤並收合
+  ['mood', 'sleep', 'factor'].forEach(id => {
+    updateSummary(id);
+    const body    = document.getElementById('body-' + id);
+    const toggle  = document.getElementById('toggle-' + id);
+    const summary = document.getElementById('summary-' + id);
+    const doneTag = document.getElementById('done-' + id);
+    if (!body.classList.contains('collapsed')) {
+      body.classList.add('collapsed');
+      toggle.classList.add('collapsed');
+    }
+    summary.classList.remove('show');
+    if (doneTag) doneTag.classList.add('show');
+  });
+}
+
+function saveRecord() {
+  // 儲存完整資料
+  const data = collectDailyData();
+  localStorage.setItem(todayDayKey(), JSON.stringify(data));
+  // 保留舊 flag 以兼容
+  localStorage.setItem(todayKey(), '1');
+  lockRecordForm();
+  updateHero(); // 重新計算趨勢
+  showToast('✓ 今日記錄已儲存');
+}
+
+function cancelTodayRecord() {
+  localStorage.removeItem(todayKey());
+  localStorage.removeItem(todayDayKey());
+  document.getElementById('lockedBanner').classList.remove('show');
+  document.getElementById('recordFormWrap').classList.remove('form-locked');
+  ['mood', 'sleep', 'factor'].forEach(id => {
+    const doneTag = document.getElementById('done-' + id);
+    if (doneTag) doneTag.classList.remove('show');
+  });
+  updateHero();
+  showToast('已取消今日紀錄');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+/* ════ CHARTS ════ */
+let moodInst, medInst, sleepInst, deepSleepInst;
+function renderCharts() {
+  const labels = [];
+  const moodData      = new Array(14).fill(null);
+  const medData       = new Array(14).fill(null);
+  const sleepData     = new Array(14).fill(null);
+  const deepSleepData = new Array(14).fill(null);
+  for(let i = 13; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    labels.push(`${d.getMonth()+1}/${d.getDate()}`);
+  }
+
+  const axisOpts = {
+    grid: { color: 'rgba(255,255,255,0.04)' },
+    ticks: { color: '#7a748e', font: { size: 11 }, maxRotation: 0 }
+  };
+
+  if(moodInst) moodInst.destroy();
+  moodInst = new Chart(document.getElementById('moodChart'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        data: moodData,
+        borderColor: '#c8a97e',
+        backgroundColor: 'rgba(200,169,126,0.07)',
+        fill: true,
+        tension: 0.4,
+        borderWidth: 2,
+        pointBackgroundColor: moodData.map(v => v>=65?'#7ec8a0':v>=40?'#e8b86d':'#e87d7d'),
+        pointBorderColor: 'transparent',
+        pointRadius: 5,
+        pointHoverRadius: 7,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { x: axisOpts, y: { ...axisOpts, min: 0, max: 100 } }
+    }
+  });
+
+  if(medInst) medInst.destroy();
+  medInst = new Chart(document.getElementById('medChart'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        data: medData,
+        backgroundColor: 'rgba(155,142,196,0.35)',
+        borderColor: '#9b8ec4',
+        borderWidth: 1,
+        borderRadius: 5,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { x: axisOpts, y: { ...axisOpts, min: 0, max: 2,
+        ticks: { ...axisOpts.ticks, stepSize: 0.5 } } }
+    }
+  });
+
+  if(sleepInst) sleepInst.destroy();
+  sleepInst = new Chart(document.getElementById('sleepChart'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        data: sleepData,
+        backgroundColor: 'rgba(126,200,160,0.35)',
+        borderColor: '#7ec8a0',
+        borderWidth: 1,
+        borderRadius: 5,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { x: axisOpts, y: { ...axisOpts, min: 0, max: 12,
+        ticks: { ...axisOpts.ticks, stepSize: 2,
+          callback: v => v + 'h' } } }
+    }
+  });
+
+  if(deepSleepInst) deepSleepInst.destroy();
+  deepSleepInst = new Chart(document.getElementById('deepSleepChart'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        data: deepSleepData,
+        backgroundColor: 'rgba(155,142,196,0.35)',
+        borderColor: '#9b8ec4',
+        borderWidth: 1,
+        borderRadius: 5,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { x: axisOpts, y: { ...axisOpts, min: 0, max: 6,
+        ticks: { ...axisOpts.ticks, stepSize: 1,
+          callback: v => v + 'h' } } }
+    }
+  });
+}
+
+/* ════ LOG ════ */
+function renderLog() {
+  const el = document.getElementById('logList');
+  el.innerHTML = `
+    <div style="text-align:center; padding:48px 24px; color:var(--muted);">
+      <div style="font-size:36px; margin-bottom:12px;">🌱</div>
+      <div style="font-size:15px; line-height:1.6;">還沒有紀錄<br>從今天開始，慢慢累積屬於你的軌跡</div>
+    </div>
+  `;
+}
+
+/* ════ INIT ════ */
+// 初始化 med display（從 0 開始）
+['ad','ax','sl'].forEach(k => {
+  document.getElementById('med-'+k).textContent = '0';
+});
+
+updateHero();
+
+// 檢查今天是否已記錄
+if (localStorage.getItem(todayKey())) {
+  // 三個區段全部標記為已儲存
+  sectionSaved.mood = true;
+  sectionSaved.sleep = true;
+  sectionSaved.factor = true;
+  ['mood','sleep','factor'].forEach(id => updateSectionBtn(id));
+  lockRecordForm();
+}
+</script>
+<!-- PWA Install Banner -->
+<div id="pwa-banner" style="display:none; position:fixed; bottom:80px; left:50%; transform:translateX(-50%); width:calc(100% - 40px); max-width:500px; background:#221f31; border:1px solid rgba(200,169,126,0.3); border-radius:16px; padding:16px 20px; z-index:9999; box-shadow:0 8px 32px rgba(0,0,0,0.4); display:none; align-items:center; gap:12px;">
+  <img src="./icon-192.png" width="44" height="44" style="border-radius:10px; flex-shrink:0;">
+  <div style="flex:1;">
+    <div style="font-weight:600; color:#e8e4f0; font-size:16px;">加到主畫面</div>
+    <div style="color:#7a748e; font-size:16px; margin-top:2px;">像 App 一樣快速開啟</div>
+  </div>
+  <button id="pwa-install-btn" style="background:#c8a97e; color:#0f0e14; border:none; border-radius:10px; padding:8px 16px; font-weight:600; font-size:17px; cursor:pointer; flex-shrink:0;">安裝</button>
+  <button id="pwa-dismiss-btn" style="background:transparent; border:none; color:#7a748e; cursor:pointer; font-size:20px; padding:4px; flex-shrink:0;">✕</button>
+</div>
+
+<script>
+// ── Service Worker 註冊 ──
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(reg => console.log('[MindCompass] SW 已註冊', reg.scope))
+      .catch(err => console.warn('[MindCompass] SW 註冊失敗', err));
+  });
+}
+
+// ── PWA 安裝提示 ──
+let deferredPrompt = null;
+const banner = document.getElementById('pwa-banner');
+const installBtn = document.getElementById('pwa-install-btn');
+const dismissBtn = document.getElementById('pwa-dismiss-btn');
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  // 延遲 2 秒再顯示 banner，避免進入就彈出
+  setTimeout(() => {
+    banner.style.display = 'flex';
+  }, 2000);
+});
+
+installBtn.addEventListener('click', async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  console.log('[MindCompass] 安裝選擇：', outcome);
+  deferredPrompt = null;
+  banner.style.display = 'none';
+});
+
+dismissBtn.addEventListener('click', () => {
+  banner.style.display = 'none';
+  // 記住使用者已關閉，30 天內不再顯示
+  localStorage.setItem('pwa-banner-dismissed', Date.now());
+});
+
+// 已安裝則隱藏 banner
+window.addEventListener('appinstalled', () => {
+  banner.style.display = 'none';
+  deferredPrompt = null;
+  console.log('[MindCompass] App 已安裝到主畫面！');
+});
+
+// 30 天內已關閉過，不再顯示
+const dismissed = localStorage.getItem('pwa-banner-dismissed');
+if (dismissed && Date.now() - dismissed < 30 * 24 * 60 * 60 * 1000) {
+  if (banner) banner.style.setProperty('display', 'none', 'important');
+}
+
+/* ════ STAR CANVAS ════ */
 /* ════ STAR CANVAS ════ */
 (function() {
   const canvas = document.getElementById('starCanvas');
@@ -1104,259 +1899,6 @@
   initStars();
   draw();
 })();
-
-/* ════ STATE ════ */
-const medState = { ad: 0, ax: 0, sl: 0 };
-let sleepQuality = 'ok';
-const sliderVals = { calm:3, anxiety:3, depress:3, energy:3, self:3, connect:3 };
-const sectionSaved = { mood: false, sleep: false, factor: false };
-
-(function() {
-  const d = new Date();
-  const days = ['日','一','二','三','四','五','六'];
-  document.getElementById('dateBadge').textContent =
-    `${d.getFullYear()} / ${d.getMonth()+1} / ${d.getDate()}　週${days[d.getDay()]}`;
-})();
-
-function switchTab(name, btn) {
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('panel-'+name).classList.add('active');
-  btn.classList.add('active');
-  if(name === 'overview') renderCharts();
-  if(name === 'log') renderLog();
-}
-
-function stepMood(key, delta) {
-  sliderVals[key] = Math.min(5, Math.max(1, sliderVals[key] + delta));
-  document.getElementById('val-' + key).textContent = sliderVals[key];
-  updateHero();
-}
-
-function calcScore() {
-  const s = sliderVals;
-  const n = {
-    calm:    (s.calm - 1) / 4 * 100,
-    energy:  (s.energy - 1) / 4 * 100,
-    connect: (s.connect - 1) / 4 * 100,
-    anxiety: (5 - s.anxiety) / 4 * 100,
-    depress: (5 - s.depress) / 4 * 100,
-    self:    (s.self - 1) / 4 * 100,
-  };
-  const moodScore = (n.calm*11 + n.energy*10 + n.connect*9 + n.anxiety*10 + n.depress*10 + n.self*8) / 58;
-  const sleepH = parseFloat(document.getElementById('sleepHourH').value) || 0;
-  const sleepM = parseFloat(document.getElementById('sleepHourM').value) || 0;
-  const h = sleepH + sleepM / 60;
-  let sleepScore = 50;
-  if (!isNaN(h) && h > 0) {
-    if      (h >= 7 && h <= 9)  sleepScore = 100;
-    else if (h >= 6 && h < 7)   sleepScore = 80;
-    else if (h > 9 && h <= 10)  sleepScore = 80;
-    else if (h >= 5 && h < 6)   sleepScore = 55;
-    else if (h > 10 && h <= 11) sleepScore = 60;
-    else if (h >= 4 && h < 5)   sleepScore = 30;
-    else                         sleepScore = 10;
-  }
-  const goodCount = document.querySelectorAll('.factor-chip.selected-good').length;
-  const badCount  = document.querySelectorAll('.factor-chip.selected-bad').length;
-  const factorScore = ((goodCount / 9) * 100 + (1 - badCount / 14) * 100) / 2;
-  return Math.min(100, Math.max(0, Math.round(moodScore * 0.25 + sleepScore * 0.50 + factorScore * 0.25)));
-}
-
-function updateHero() {
-  const score = calcScore();
-  document.getElementById('heroScore').textContent = score;
-  const circ = 326.7;
-  document.getElementById('moodArc').style.strokeDashoffset = circ - (circ * score / 100);
-  const title = document.getElementById('heroTitle');
-  const desc  = document.getElementById('heroDesc');
-  const tag   = document.getElementById('heroTag');
-  if(score >= 65) {
-    title.textContent = '今天狀態還不錯';
-    desc.textContent  = '情緒指數在穩定區間。這種狀態下的判斷比較客觀，如果有重要決定，現在是適合思考的時機。';
-    tag.textContent   = '✦ 可以信任今天的判斷';
-    tag.style.cssText = 'background:rgba(93,224,216,0.10);color:var(--good);border:1px solid rgba(93,224,216,0.25)';
-  } else if(score >= 40) {
-    title.textContent = '今天狀態普通，留意自己';
-    desc.textContent  = '指數在中間地帶。重大決定建議先暫緩，先把自己照顧好，等狀態回升再說。';
-    tag.textContent   = '⚠ 重大決定先緩一緩';
-    tag.style.cssText = 'background:rgba(232,184,109,0.10);color:var(--warn);border:1px solid rgba(232,184,109,0.25)';
-  } else {
-    title.textContent = '今天狀態需要特別關注';
-    desc.textContent  = '情緒指數偏低。這時候的感受可能比實際更負面，你的判斷力暫時在低谷，請先善待自己。';
-    tag.textContent   = '🛑 今天不適合做重要決定';
-    tag.style.cssText = 'background:rgba(232,125,125,0.10);color:var(--danger);border:1px solid rgba(232,125,125,0.25)';
-  }
-}
-
-function stepMed(key, delta) {
-  medState[key] = Math.max(0, Math.round((medState[key] + delta) * 100) / 100);
-  document.getElementById('med-'+key).textContent =
-    Number.isInteger(medState[key]) ? medState[key] : medState[key].toFixed(2);
-}
-
-function setSleepQ(q, btn) {
-  sleepQuality = q;
-  document.querySelectorAll('.sq-btn').forEach(b => b.className = 'sq-btn');
-  btn.classList.add('active-'+q);
-}
-
-function toggleSection(id) {
-  const body   = document.getElementById('body-' + id);
-  const toggle = document.getElementById('toggle-' + id);
-  const summary = document.getElementById('summary-' + id);
-  const isCollapsed = body.classList.toggle('collapsed');
-  toggle.classList.toggle('collapsed', isCollapsed);
-  if (isCollapsed) { summary.classList.add('show'); updateSummary(id); }
-  else { summary.classList.remove('show'); updateSectionBtn(id); }
-}
-
-function updateSummary(id) {
-  const el = document.getElementById('summary-' + id);
-  if (!el) return;
-  if (id === 'mood') {
-    const s = sliderVals;
-    el.textContent = `平靜 ${s.calm} · 焦慮 ${s.anxiety} · 活力 ${s.energy}`;
-  } else if (id === 'sleep') {
-    const sH = document.getElementById('sleepHourH').value || '';
-    const sM = document.getElementById('sleepHourM').value || '';
-    const sleepStr = sH ? `${sH}h${sM ? sM+'m' : ''}` : '—';
-    el.textContent = `${sleepStr}`;
-  } else if (id === 'factor') {
-    const good = document.querySelectorAll('.factor-chip.selected-good').length;
-    const bad  = document.querySelectorAll('.factor-chip.selected-bad').length;
-    el.textContent = `✦ ${good}　✕ ${bad}`;
-  }
-}
-
-function toggleFactor(el, type) {
-  const has = el.classList.contains('selected-good') || el.classList.contains('selected-bad');
-  el.classList.remove('selected-good','selected-bad');
-  if(!has) el.classList.add('selected-'+type);
-  updateHero();
-}
-
-function handleSectionBtn(event, id) {
-  event.stopPropagation();
-  if (sectionSaved[id]) { cancelSection(id); } else { saveSection(id); }
-}
-
-function saveSection(id) {
-  sectionSaved[id] = true;
-  updateSectionBtn(id);
-  const body = document.getElementById('body-' + id);
-  const toggle = document.getElementById('toggle-' + id);
-  const summary = document.getElementById('summary-' + id);
-  updateSummary(id);
-  if (!body.classList.contains('collapsed')) { body.classList.add('collapsed'); toggle.classList.add('collapsed'); }
-  summary.classList.add('show');
-  showToast('✓ 已儲存');
-}
-
-function cancelSection(id) {
-  sectionSaved[id] = false;
-  updateSectionBtn(id);
-  showToast('已取消');
-}
-
-function updateSectionBtn(id) {
-  const btn = document.getElementById('section-btn-' + id);
-  if (!btn) return;
-  if (sectionSaved[id]) { btn.textContent = '取消'; btn.classList.add('is-cancel'); }
-  else { btn.textContent = '儲存'; btn.classList.remove('is-cancel'); }
-}
-
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2800);
-}
-
-let moodInst, medInst, sleepInst, deepSleepInst;
-function renderCharts() {
-  const labels = [];
-  const moodData = [58,72,45,68,71,55,41,66,74,70,63,58,72,75];
-  const medData  = [0.5,0.5,0.75,0.5,0.25,0.5,1,0.5,0.5,0.25,0.5,0.5,0.25,0.5];
-  const sleepData= [6,7,5.5,6.5,7,6,5,7,7.5,6.5,6,6.5,7,6.5];
-  const deepData = [1.5,2,1,1.8,2.2,1.5,1,2,2.5,2,1.8,1.5,2,1.8];
-  for(let i=13;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);labels.push(`${d.getMonth()+1}/${d.getDate()}`);}
-
-  const darkGrid = { color: 'rgba(126,148,220,0.08)' };
-  const darkTick = { color: '#4a5580', font: { size: 11 }, maxRotation: 0 };
-  const axisOpts = { grid: darkGrid, ticks: darkTick };
-
-  Chart.defaults.color = '#4a5580';
-
-  if(moodInst) moodInst.destroy();
-  moodInst = new Chart(document.getElementById('moodChart'), {
-    type: 'line',
-    data: { labels, datasets: [{
-      data: moodData,
-      borderColor: 'rgba(93,224,216,0.8)',
-      backgroundColor: 'rgba(93,224,216,0.06)',
-      fill: true, tension: 0.4, borderWidth: 2,
-      pointBackgroundColor: moodData.map(v => v>=65?'#7ec8a0':v>=40?'#e8b86d':'#e87d7d'),
-      pointBorderColor: 'transparent', pointRadius: 5, pointHoverRadius: 7,
-    }]},
-    options: { responsive:true, maintainAspectRatio:false,
-      plugins:{legend:{display:false}},
-      scales:{x:axisOpts, y:{...axisOpts, min:0, max:100}} }
-  });
-
-  if(medInst) medInst.destroy();
-  medInst = new Chart(document.getElementById('medChart'), {
-    type: 'bar',
-    data: { labels, datasets: [{
-      data: medData,
-      backgroundColor: 'rgba(155,142,196,0.25)',
-      borderColor: 'rgba(155,142,196,0.60)',
-      borderWidth: 1, borderRadius: 5,
-    }]},
-    options: { responsive:true, maintainAspectRatio:false,
-      plugins:{legend:{display:false}},
-      scales:{x:axisOpts, y:{...axisOpts, min:0, max:2, ticks:{...darkTick, stepSize:0.5}}} }
-  });
-
-  if(sleepInst) sleepInst.destroy();
-  sleepInst = new Chart(document.getElementById('sleepChart'), {
-    type: 'bar',
-    data: { labels, datasets: [{
-      data: sleepData,
-      backgroundColor: 'rgba(93,224,216,0.18)',
-      borderColor: 'rgba(93,224,216,0.50)',
-      borderWidth: 1, borderRadius: 5,
-    }]},
-    options: { responsive:true, maintainAspectRatio:false,
-      plugins:{legend:{display:false}},
-      scales:{x:axisOpts, y:{...axisOpts, min:0, max:12, ticks:{...darkTick, stepSize:2, callback:v=>v+'h'}}} }
-  });
-
-  if(deepSleepInst) deepSleepInst.destroy();
-  deepSleepInst = new Chart(document.getElementById('deepSleepChart'), {
-    type: 'bar',
-    data: { labels, datasets: [{
-      data: deepData,
-      backgroundColor: 'rgba(155,142,196,0.20)',
-      borderColor: 'rgba(155,142,196,0.55)',
-      borderWidth: 1, borderRadius: 5,
-    }]},
-    options: { responsive:true, maintainAspectRatio:false,
-      plugins:{legend:{display:false}},
-      scales:{x:axisOpts, y:{...axisOpts, min:0, max:6, ticks:{...darkTick, stepSize:1, callback:v=>v+'h'}}} }
-  });
-}
-
-function renderLog() {
-  const el = document.getElementById('logList');
-  el.innerHTML = `
-    <div style="text-align:center;padding:48px 24px;color:var(--muted);">
-      <div style="font-size:36px;margin-bottom:12px;">🌙</div>
-      <div style="font-size:15px;line-height:1.6;">還沒有紀錄<br>從今天開始，慢慢累積屬於你的軌跡</div>
-    </div>`;
-}
-
-updateHero();
 </script>
 </body>
 </html>
