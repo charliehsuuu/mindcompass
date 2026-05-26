@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>MindCompass</title>
 <link rel="manifest" href="./manifest.json">
 <meta name="theme-color" content="#0a0c1a">
@@ -15,6 +15,9 @@
 <meta name="msapplication-TileImage" content="./icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
 <style>
+  /* ── 禁用雙擊放大 & 觸控縮放 ── */
+  * { touch-action: manipulation; }
+
   :root {
     /* ── 夜空主色系 ── */
     --bg:        #0a0c1a;
@@ -709,9 +712,51 @@
     .stat-card .stat-val { font-size: 25px; }
     .stat-card { padding: 14px 10px; }
   }
+
+  /* ── 鎖定直向：橫向時顯示提示畫面 ── */
+  #landscape-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    background: #0a0c1a;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    color: #e8eaf6;
+    font-family: 'DM Sans', sans-serif;
+  }
+  #landscape-overlay svg {
+    width: 60px;
+    height: 60px;
+    opacity: 0.7;
+    animation: rotate-hint 1.5s ease-in-out infinite alternate;
+  }
+  #landscape-overlay p {
+    font-size: 16px;
+    color: var(--muted, #7a85b0);
+    text-align: center;
+    padding: 0 32px;
+  }
+  @keyframes rotate-hint {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(-15deg); }
+  }
+  @media screen and (orientation: landscape) {
+    #landscape-overlay { display: flex; }
+    body > *:not(#landscape-overlay) { visibility: hidden; }
+  }
 </style>
 </head>
 <body>
+<div id="landscape-overlay">
+  <svg viewBox="0 0 24 24" fill="none" stroke="#c8a97e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="2" y="7" width="20" height="10" rx="2"/>
+    <path d="M17 2l5 5-5 5"/>
+  </svg>
+  <p>請旋轉至直向模式<br>以獲得最佳使用體驗</p>
+</div>
 <canvas id="starCanvas"></canvas>
 <div class="app">
 
@@ -896,11 +941,11 @@
             <div>
               <div style="font-size:13px;color:var(--muted);margin-bottom:6px;letter-spacing:0.5px">總睡眠時間</div>
               <div style="display:flex;align-items:center;gap:8px">
-                <input type="number" class="sleep-hour-input" id="sleepHourH"
+                <input type="number" inputmode="numeric" class="sleep-hour-input" id="sleepHourH"
                   value="" min="0" max="14" step="1" placeholder="—"
                   oninput="updateHero(); updateSummary('sleep');">
                 <span style="color:var(--muted);font-size:17px">小時</span>
-                <input type="number" class="sleep-hour-input" id="sleepHourM"
+                <input type="number" inputmode="numeric" class="sleep-hour-input" id="sleepHourM"
                   value="" min="0" max="59" step="5" placeholder="—"
                   style="width:64px"
                   oninput="updateHero(); updateSummary('sleep');">
@@ -910,10 +955,10 @@
             <div>
               <div style="font-size:13px;color:var(--muted);margin-bottom:6px;letter-spacing:0.5px">深層睡眠時間</div>
               <div style="display:flex;align-items:center;gap:8px">
-                <input type="number" class="sleep-hour-input" id="deepSleepHourH"
+                <input type="number" inputmode="numeric" class="sleep-hour-input" id="deepSleepHourH"
                   value="" min="0" max="8" step="1" placeholder="—">
                 <span style="color:var(--muted);font-size:17px">小時</span>
-                <input type="number" class="sleep-hour-input" id="deepSleepHourM"
+                <input type="number" inputmode="numeric" class="sleep-hour-input" id="deepSleepHourM"
                   value="" min="0" max="59" step="5" placeholder="—"
                   style="width:64px">
                 <span style="color:var(--muted);font-size:17px">分</span>
@@ -1755,6 +1800,11 @@ if (localStorage.getItem(todayKey())) {
   ['mood','sleep','factor'].forEach(id => updateSectionBtn(id));
   lockRecordForm();
 }
+  /* ── 鎖定直向模式 ── */
+  if (screen.orientation && screen.orientation.lock) {
+    screen.orientation.lock('portrait').catch(() => {});
+  }
+
 </script>
 <!-- PWA Install Banner -->
 <div id="pwa-banner" style="display:none; position:fixed; bottom:80px; left:50%; transform:translateX(-50%); width:calc(100% - 40px); max-width:500px; background:#221f31; border:1px solid rgba(200,169,126,0.3); border-radius:16px; padding:16px 20px; z-index:9999; box-shadow:0 8px 32px rgba(0,0,0,0.4); display:none; align-items:center; gap:12px;">
