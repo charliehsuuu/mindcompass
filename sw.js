@@ -1,6 +1,6 @@
 // MindCompass Service Worker
 // 版本號：每次更新 App 時請遞增
-const CACHE_NAME = 'mindcompass-v4';
+const CACHE_NAME = 'mindcompass-v5';
 
 // 要快取的資源清單
 const ASSETS_TO_CACHE = [
