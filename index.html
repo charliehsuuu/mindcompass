@@ -761,16 +761,17 @@
 <div class="app">
 
   <!-- Header -->
-  <div class="header">
+  <header class="header">
     <div class="header-left">
       <h1>Mind<span>Compass</span></h1>
       <p>情緒觀察 · 用藥日誌 · 有意識地前進</p>
     </div>
     <div class="date-badge" id="dateBadge"></div>
-  </div>
+  </header>
+  <main>
 
   <!-- Mood Hero -->
-  <div class="mood-hero">
+  <section class="mood-hero" aria-label="情緒指數儀表板">
     <div class="mood-rings">
       <!-- 今日狀態圓圈 -->
       <div class="mood-ring-wrap">
@@ -827,17 +828,17 @@
       <span class="mood-tag" id="heroTag">✦ 可以信任今天的判斷</span>
       <div class="trend-alert" id="trendAlert"></div>
     </div>
-  </div>
+  </section>
 
   <!-- Tabs -->
-  <div class="tabs">
+  <nav class="tabs" aria-label="頁面功能切換" role="tablist">
     <button class="tab-btn active" onclick="switchTab('record',this)">📝 今日記錄</button>
     <button class="tab-btn" onclick="switchTab('overview',this)">📊 趨勢總覽</button>
     <button class="tab-btn" onclick="switchTab('log',this)">📋 歷史日誌</button>
-  </div>
+  </nav>
 
   <!-- ════ PANEL: 今日記錄 ════ -->
-  <div class="panel active" id="panel-record">
+  <section class="panel active" id="panel-record" aria-label="今日記錄" role="tabpanel">
 
     <!-- 今日鎖定 banner -->
     <div class="locked-banner" id="lockedBanner">
@@ -870,49 +871,49 @@
           <div class="mood-row">
             <label>😌 平靜感</label>
             <div class="step-ctrl">
-              <button class="step-btn" onclick="stepMood('calm',-1)">−</button>
+              <button class="step-btn" onclick="stepMood('calm',-1)" aria-label="降低平靜感">−</button>
               <span class="step-val" id="val-calm">3</span>
-              <button class="step-btn" onclick="stepMood('calm',1)">+</button>
+              <button class="step-btn" onclick="stepMood('calm',1)" aria-label="提高平靜感">+</button>
             </div>
           </div>
           <div class="mood-row">
             <label>😟 焦慮程度</label>
             <div class="step-ctrl">
-              <button class="step-btn" onclick="stepMood('anxiety',-1)">−</button>
+              <button class="step-btn" onclick="stepMood('anxiety',-1)" aria-label="降低焦慮程度">−</button>
               <span class="step-val" id="val-anxiety">3</span>
-              <button class="step-btn" onclick="stepMood('anxiety',1)">+</button>
+              <button class="step-btn" onclick="stepMood('anxiety',1)" aria-label="提高焦慮程度">+</button>
             </div>
           </div>
           <div class="mood-row">
             <label>🌑 低落程度</label>
             <div class="step-ctrl">
-              <button class="step-btn" onclick="stepMood('depress',-1)">−</button>
+              <button class="step-btn" onclick="stepMood('depress',-1)" aria-label="降低低落程度">−</button>
               <span class="step-val" id="val-depress">3</span>
-              <button class="step-btn" onclick="stepMood('depress',1)">+</button>
+              <button class="step-btn" onclick="stepMood('depress',1)" aria-label="提高低落程度">+</button>
             </div>
           </div>
           <div class="mood-row">
             <label>⚡ 活力感</label>
             <div class="step-ctrl">
-              <button class="step-btn" onclick="stepMood('energy',-1)">−</button>
+              <button class="step-btn" onclick="stepMood('energy',-1)" aria-label="降低活力感">−</button>
               <span class="step-val" id="val-energy">3</span>
-              <button class="step-btn" onclick="stepMood('energy',1)">+</button>
+              <button class="step-btn" onclick="stepMood('energy',1)" aria-label="提高活力感">+</button>
             </div>
           </div>
           <div class="mood-row">
             <label>🪞 自我評價</label>
             <div class="step-ctrl">
-              <button class="step-btn" onclick="stepMood('self',-1)">−</button>
+              <button class="step-btn" onclick="stepMood('self',-1)" aria-label="降低自我評價">−</button>
               <span class="step-val" id="val-self">3</span>
-              <button class="step-btn" onclick="stepMood('self',1)">+</button>
+              <button class="step-btn" onclick="stepMood('self',1)" aria-label="提高自我評價">+</button>
             </div>
           </div>
           <div class="mood-row">
             <label>🤝 連結感</label>
             <div class="step-ctrl">
-              <button class="step-btn" onclick="stepMood('connect',-1)">−</button>
+              <button class="step-btn" onclick="stepMood('connect',-1)" aria-label="降低連結感">−</button>
               <span class="step-val" id="val-connect">3</span>
-              <button class="step-btn" onclick="stepMood('connect',1)">+</button>
+              <button class="step-btn" onclick="stepMood('connect',1)" aria-label="提高連結感">+</button>
             </div>
           </div>
         </div>
@@ -984,27 +985,27 @@
           <div class="med-row">
             <label>抗憂鬱</label>
             <div class="step-ctrl">
-              <button class="step-btn" onclick="stepMed('ad',-0.25)">−</button>
+              <button class="step-btn" onclick="stepMed('ad',-0.25)" aria-label="減少抗憂鬱藥量">−</button>
               <span class="step-val" id="med-ad">0.25</span>
-              <button class="step-btn" onclick="stepMed('ad',0.25)">+</button>
+              <button class="step-btn" onclick="stepMed('ad',0.25)" aria-label="增加抗憂鬱藥量">+</button>
               <span class="med-unit">顆</span>
             </div>
           </div>
           <div class="med-row">
             <label>抗焦慮</label>
             <div class="step-ctrl">
-              <button class="step-btn" onclick="stepMed('ax',-0.25)">−</button>
+              <button class="step-btn" onclick="stepMed('ax',-0.25)" aria-label="減少抗焦慮藥量">−</button>
               <span class="step-val" id="med-ax">0.25</span>
-              <button class="step-btn" onclick="stepMed('ax',0.25)">+</button>
+              <button class="step-btn" onclick="stepMed('ax',0.25)" aria-label="增加抗焦慮藥量">+</button>
               <span class="med-unit">顆</span>
             </div>
           </div>
           <div class="med-row">
             <label>安眠藥</label>
             <div class="step-ctrl">
-              <button class="step-btn" onclick="stepMed('sl',-0.25)">−</button>
+              <button class="step-btn" onclick="stepMed('sl',-0.25)" aria-label="減少安眠藥量">−</button>
               <span class="step-val" id="med-sl">0.25</span>
-              <button class="step-btn" onclick="stepMed('sl',0.25)">+</button>
+              <button class="step-btn" onclick="stepMed('sl',0.25)" aria-label="增加安眠藥量">+</button>
               <span class="med-unit">顆</span>
             </div>
           </div>
@@ -1073,10 +1074,10 @@
         placeholder="今天有什麼想記下來的？發生了什麼事、有什麼感受，或一個小小的自我觀察…"></textarea>
     </div>
   </div>
-  </div><!-- /recordFormWrap -->
+  </section><!-- /recordFormWrap -->
 
   <!-- ════ PANEL: 趨勢總覽 ════ -->
-  <div class="panel" id="panel-overview">
+  <section class="panel" id="panel-overview" aria-label="趨勢總覽" role="tabpanel">
     <div class="stats-row">
       <div class="stat-card">
         <div class="stat-val" style="color:var(--good)">72</div>
@@ -1132,16 +1133,18 @@
         <canvas id="deepSleepChart"></canvas>
       </div>
     </div>
-  </div>
+  </section>
 
   <!-- ════ PANEL: 歷史日誌 ════ -->
-  <div class="panel" id="panel-log">
+  <section class="panel" id="panel-log" aria-label="歷史日誌" role="tabpanel">
     <div class="insight-banner">
       <h3>✦ 正 / 負能量事件統計（近 30 天）</h3>
       <p>記錄到 <strong>23 次正面因素</strong> vs <strong>31 次負面因素</strong>。好消息是：正面事件的密度正在上升，上週比兩週前多了 3 次。繼續記錄，趨勢會越來越清晰。</p>
     </div>
     <div class="log-list" id="logList"></div>
-  </div>
+  </section>
+
+  </main>
 
 </div>
 
