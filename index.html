@@ -747,6 +747,44 @@
     #landscape-overlay { display: flex; }
     body > *:not(#landscape-overlay) { visibility: hidden; }
   }
+
+  /* ── HRV & Time inputs ── */
+  .hrv-input {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-size: 29px;
+    font-family: 'DM Serif Display', serif;
+    width: 90px;
+    text-align: center;
+    padding: 8px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .hrv-input:focus { border-color: #e8b86d; box-shadow: 0 0 0 2px rgba(232,184,109,0.18); }
+  .med-time-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--muted);
+    padding-left: 2px;
+  }
+  .med-time-input {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 15px;
+    font-family: 'DM Sans', sans-serif;
+    padding: 5px 10px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    color-scheme: dark;
+  }
+  .med-time-input:focus { border-color: var(--sleep-mid); box-shadow: 0 0 0 2px rgba(155,142,196,0.18); }
+
 </style>
 </head>
 <body>
@@ -965,6 +1003,15 @@
                 <span style="color:var(--muted);font-size:17px">分</span>
               </div>
             </div>
+            <div>
+              <div style="font-size:13px;color:var(--muted);margin-bottom:6px;letter-spacing:0.5px">HRV 數值 <span style="font-size:11px;opacity:0.6">· 自律神經客觀指標 (ms)</span></div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <input type="number" inputmode="numeric" class="hrv-input" id="hrvInput"
+                  value="" min="0" max="300" step="1" placeholder="—"
+                  oninput="saveDraft();" aria-label="HRV 數值（毫秒）">
+                <span style="color:var(--muted);font-size:17px">ms</span>
+              </div>
+            </div>
           </div>
           <div>
             <div style="font-size:13px;color:var(--muted);margin-bottom:8px;letter-spacing:0.5px">自我評估</div>
@@ -982,13 +1029,20 @@
           昨晚服藥量
         </div>
         <div class="med-inputs">
-          <div class="med-row">
-            <label>抗憂鬱</label>
-            <div class="step-ctrl">
-              <button class="step-btn" onclick="stepMed('ad',-0.25)" aria-label="減少抗憂鬱藥量">−</button>
-              <span class="step-val" id="med-ad">0.25</span>
-              <button class="step-btn" onclick="stepMed('ad',0.25)" aria-label="增加抗憂鬱藥量">+</button>
-              <span class="med-unit">顆</span>
+          <div class="med-row" style="flex-direction:column;align-items:flex-start;gap:6px;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <label>抗憂鬱</label>
+              <div class="step-ctrl">
+                <button class="step-btn" onclick="stepMed('ad',-0.25)" aria-label="減少抗憂鬱藥量">−</button>
+                <span class="step-val" id="med-ad">0.25</span>
+                <button class="step-btn" onclick="stepMed('ad',0.25)" aria-label="增加抗憂鬱藥量">+</button>
+                <span class="med-unit">顆</span>
+              </div>
+            </div>
+            <div class="med-time-wrap">
+              <span>服藥時間</span>
+              <input type="time" class="med-time-input" id="med-ad-time"
+                onchange="saveDraft();" aria-label="抗憂鬱服藥時間">
             </div>
           </div>
           <div class="med-row">
@@ -1000,13 +1054,20 @@
               <span class="med-unit">顆</span>
             </div>
           </div>
-          <div class="med-row">
-            <label>安眠藥</label>
-            <div class="step-ctrl">
-              <button class="step-btn" onclick="stepMed('sl',-0.25)" aria-label="減少安眠藥量">−</button>
-              <span class="step-val" id="med-sl">0.25</span>
-              <button class="step-btn" onclick="stepMed('sl',0.25)" aria-label="增加安眠藥量">+</button>
-              <span class="med-unit">顆</span>
+          <div class="med-row" style="flex-direction:column;align-items:flex-start;gap:6px;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <label>安眠藥</label>
+              <div class="step-ctrl">
+                <button class="step-btn" onclick="stepMed('sl',-0.25)" aria-label="減少安眠藥量">−</button>
+                <span class="step-val" id="med-sl">0.25</span>
+                <button class="step-btn" onclick="stepMed('sl',0.25)" aria-label="增加安眠藥量">+</button>
+                <span class="med-unit">顆</span>
+              </div>
+            </div>
+            <div class="med-time-wrap">
+              <span>服藥時間</span>
+              <input type="time" class="med-time-input" id="med-sl-time"
+                onchange="saveDraft();" aria-label="安眠藥服藥時間">
             </div>
           </div>
         </div>
@@ -1605,6 +1666,9 @@ function saveDraft() {
     medState: { ...medState },
     goodFactors, badFactors,
     note: document.getElementById('noteInput').value || '',
+    hrv:    document.getElementById('hrvInput').value || '',
+    adTime: document.getElementById('med-ad-time').value || '',
+    slTime: document.getElementById('med-sl-time').value || '',
     sectionSaved: { ...sectionSaved }
   };
   localStorage.setItem(draftKey(), JSON.stringify(draft));
@@ -1627,6 +1691,9 @@ function loadDraft() {
   document.getElementById('sleepHourM').value    = d.sleepM || '';
   document.getElementById('deepSleepHourH').value = d.deepH || '';
   document.getElementById('deepSleepHourM').value = d.deepM || '';
+  document.getElementById('hrvInput').value        = d.hrv    || '';
+  document.getElementById('med-ad-time').value     = d.adTime || '';
+  document.getElementById('med-sl-time').value     = d.slTime || '';
 
   // 還原睡眠品質
   sleepQuality = d.sleepQuality || 'ok';
@@ -1710,6 +1777,9 @@ function collectDailyData() {
       quality: sleepQuality
     },
     meds: { ...medState },
+    hrv:    parseFloat(document.getElementById('hrvInput').value) || null,
+    adTime: document.getElementById('med-ad-time').value || null,
+    slTime: document.getElementById('med-sl-time').value || null,
     factors: { good: goodFactors, bad: badFactors },
     note: document.getElementById('noteInput').value || ''
   };
@@ -1774,9 +1844,28 @@ function renderCharts() {
   const medData       = new Array(14).fill(null);
   const sleepData     = new Array(14).fill(null);
   const deepSleepData = new Array(14).fill(null);
+  const hrvData       = new Array(14).fill(null);
   for(let i = 13; i >= 0; i--) {
     const d = new Date(); d.setDate(d.getDate() - i);
     labels.push(`${d.getMonth()+1}/${d.getDate()}`);
+  }
+
+  // 從 localStorage 讀取近 14 天 HRV 資料
+  for(let i = 13; i >= 0; i--) {
+    const d2 = new Date(); d2.setDate(d2.getDate() - i);
+    const key = `mc_day_${d2.getFullYear()}_${d2.getMonth()+1}_${d2.getDate()}`;
+    const raw = localStorage.getItem(key);
+    if (raw) {
+      try {
+        const rec = JSON.parse(raw);
+        const idx = 13 - i;
+        if (rec.score   != null) moodData[idx]      = rec.score;
+        if (rec.meds)            medData[idx]        = (rec.meds.ad||0) + (rec.meds.ax||0) + (rec.meds.sl||0);
+        if (rec.sleep)           sleepData[idx]      = rec.sleep.totalHours || null;
+        if (rec.sleep)           deepSleepData[idx]  = rec.sleep.deepHours  || null;
+        if (rec.hrv    != null)  hrvData[idx]        = rec.hrv;
+      } catch(e) {}
+    }
   }
 
   const axisOpts = {
@@ -1814,19 +1903,62 @@ function renderCharts() {
     type: 'bar',
     data: {
       labels,
-      datasets: [{
-        data: medData,
-        backgroundColor: 'rgba(155,142,196,0.35)',
-        borderColor: '#9b8ec4',
-        borderWidth: 1,
-        borderRadius: 5,
-      }]
+      datasets: [
+        {
+          label: '用藥量 (顆)',
+          data: medData,
+          backgroundColor: 'rgba(155,142,196,0.35)',
+          borderColor: '#9b8ec4',
+          borderWidth: 1,
+          borderRadius: 5,
+          yAxisID: 'yMed',
+          order: 2,
+        },
+        {
+          label: 'HRV (ms)',
+          data: hrvData,
+          type: 'line',
+          borderColor: '#e8b86d',
+          backgroundColor: 'rgba(232,184,109,0.10)',
+          fill: false,
+          tension: 0.4,
+          borderWidth: 2,
+          pointBackgroundColor: '#e8b86d',
+          pointBorderColor: 'transparent',
+          pointRadius: 4,
+          pointHoverRadius: 6,
+          yAxisID: 'yHrv',
+          order: 1,
+          spanGaps: true,
+        }
+      ]
     },
     options: {
       responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: { x: axisOpts, y: { ...axisOpts, min: 0, max: 2,
-        ticks: { ...axisOpts.ticks, stepSize: 0.5 } } }
+      plugins: {
+        legend: {
+          display: true,
+          labels: { color: '#7a748e', font: { size: 11 }, boxWidth: 12, padding: 12 }
+        }
+      },
+      scales: {
+        x: axisOpts,
+        yMed: {
+          ...axisOpts,
+          position: 'left',
+          min: 0, max: 3,
+          ticks: { ...axisOpts.ticks, stepSize: 0.5 },
+          title: { display: true, text: '用藥量 (顆)', color: '#9b8ec4', font: { size: 10 } }
+        },
+        yHrv: {
+          ...axisOpts,
+          position: 'right',
+          min: 0,
+          grid: { drawOnChartArea: false },
+          ticks: { ...axisOpts.ticks, callback: v => v + ' ms' },
+          title: { display: true, text: 'HRV (ms)', color: '#e8b86d', font: { size: 10 } }
+        }
+      }
     }
   });
 
