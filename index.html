@@ -1895,6 +1895,72 @@ function collectDailyData() {
   };
 }
 
+function loadSavedRecord() {
+  const raw = localStorage.getItem(todayDayKey());
+  if (!raw) return;
+  let d;
+  try { d = JSON.parse(raw); } catch(e) { return; }
+
+  // 還原心情滑桿
+  if (d.mood) {
+    Object.keys(d.mood).forEach(k => {
+      sliderVals[k] = d.mood[k];
+      const el = document.getElementById('val-' + k);
+      if (el) el.textContent = d.mood[k];
+    });
+  }
+
+  // 還原睡眠時數
+  if (d.sleep) {
+    const th = d.sleep.totalHours || 0;
+    const dh = d.sleep.deepHours  || 0;
+    document.getElementById('sleepHourH').value     = Math.floor(th);
+    document.getElementById('sleepHourM').value     = Math.round((th % 1) * 60) || '';
+    document.getElementById('deepSleepHourH').value = Math.floor(dh);
+    document.getElementById('deepSleepHourM').value = Math.round((dh % 1) * 60) || '';
+    sleepQuality = d.sleep.quality || 'ok';
+    document.querySelectorAll('.sq-btn').forEach(btn => {
+      btn.className = 'sq-btn';
+      if ((sleepQuality === 'good' && btn.textContent.includes('沉穩')) ||
+          (sleepQuality === 'ok'   && btn.textContent.includes('普通')) ||
+          (sleepQuality === 'bad'  && btn.textContent.includes('淺眠')))
+        btn.classList.add('active-' + sleepQuality);
+    });
+  }
+
+  // 還原藥量
+  if (d.meds) {
+    Object.keys(d.meds).forEach(k => {
+      medState[k] = d.meds[k];
+      const el = document.getElementById('med-' + k);
+      if (el) el.textContent = Number.isInteger(d.meds[k]) ? d.meds[k] : d.meds[k].toFixed(2);
+    });
+  }
+
+  // 還原 HRV 與服藥時間
+  if (d.hrv != null) document.getElementById('hrvInput').value    = d.hrv;
+  if (d.adTime)      document.getElementById('med-ad-time').value = d.adTime;
+  if (d.slTime)      document.getElementById('med-sl-time').value = d.slTime;
+
+  // 還原影響因素
+  if (d.factors) {
+    document.querySelectorAll('.factor-chip').forEach(el => {
+      el.classList.remove('selected-good', 'selected-bad');
+      const txt = el.textContent.trim();
+      if (d.factors.good && d.factors.good.includes(txt)) el.classList.add('selected-good');
+      if (d.factors.bad  && d.factors.bad.includes(txt))  el.classList.add('selected-bad');
+    });
+  }
+
+  // 還原備註
+  if (d.note) document.getElementById('noteInput').value = d.note;
+
+  // 同步 sectionSaved 狀態
+  sectionSaved.mood   = true;
+  sectionSaved.sleep  = true;
+  sectionSaved.factor = true;
+}
+
 function lockRecordForm() {
   document.getElementById('lockedBanner').classList.add('show');
   document.getElementById('recordFormWrap').classList.add('form-locked');
@@ -2145,10 +2211,8 @@ updateHero();
 
 // 檢查今天是否已記錄
 if (localStorage.getItem(todayKey())) {
-  // 三個區段全部標記為已儲存
-  sectionSaved.mood = true;
-  sectionSaved.sleep = true;
-  sectionSaved.factor = true;
+  // 已完整儲存：先還原資料，再鎖定表單
+  loadSavedRecord();
   ['mood','sleep','factor'].forEach(id => updateSectionBtn(id));
   lockRecordForm();
 } else {
