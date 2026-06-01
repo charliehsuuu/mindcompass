@@ -939,7 +939,7 @@
         </svg>
         <div class="mood-score-label">
           <div class="score" id="heroScore">72</div>
-          <div class="score-sub">今日狀態</div>
+          <div class="score-sub" id="heroScoreLabel">今日狀態</div>
         </div>
       </div>
 
@@ -999,6 +999,41 @@
     </div>
 
     <div id="recordFormWrap">
+    <!-- 晨間狀態卡片 -->
+    <div class="card" id="morningCard" style="margin-bottom:16px;">
+      <div class="section-header" onclick="toggleSection('morning')">
+        <div class="section-header-left">
+          <div class="section-dot" style="background:var(--warn)"></div>
+          <span class="section-title">🌅 晨間狀態</span>
+          <span style="font-size:12px;color:var(--muted);margin-left:6px;">起床後填，立即看今早預估</span>
+        </div>
+        <div class="section-header-right">
+          <span class="section-summary" id="summary-morning"></span>
+          <span class="section-done-tag" id="done-morning">✓ 已完成</span>
+          <div class="section-toggle" id="toggle-morning">▲</div>
+        </div>
+      </div>
+      <div class="section-body" id="body-morning">
+        <div class="mood-steppers">
+          <div class="mood-row">
+            <label>🌤 現在感覺</label>
+            <div class="step-ctrl">
+              <button class="step-btn" onclick="stepMorning(-1)" aria-label="降低晨間心情">−</button>
+              <span class="step-val" id="val-morning">3</span>
+              <button class="step-btn" onclick="stepMorning(1)" aria-label="提高晨間心情">+</button>
+            </div>
+            <span style="font-size:13px;color:var(--muted);margin-left:8px;" id="morningMoodLabel">普通</span>
+          </div>
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin-top:10px;line-height:1.6;">
+          1 很差　2 不好　3 普通　4 不錯　5 很好
+        </div>
+        <div style="display:flex;justify-content:flex-end;margin-top:14px;">
+          <button id="section-btn-morning" class="section-save-btn" onclick="handleSectionBtn(event,'morning')">儲存</button>
+        </div>
+      </div>
+    </div>
+
     <div class="grid-2">
 
       <!-- 當下心情 -->
@@ -1327,7 +1362,8 @@
 const medState = { ad: 0, ax: 0, sl: 0 };
 let sleepQuality = 'ok';
 const sliderVals = { calm:3, anxiety:3, depress:3, energy:3, self:3, connect:3 };
-const sectionSaved = { mood: false, sleep: false, factor: false };
+let morningMood = 3;
+const sectionSaved = { mood: false, sleep: false, factor: false, morning: false };
 
 /* ════ DATE ════ */
 (function() {
@@ -1354,6 +1390,37 @@ function stepMood(key, delta) {
   updateHero();
   updateSummary('mood');
   saveDraft();
+}
+
+
+/* ════ MORNING STEPPER ════ */
+const morningLabels = ['', '很差', '不好', '普通', '不錯', '很好'];
+function stepMorning(delta) {
+  morningMood = Math.min(5, Math.max(1, morningMood + delta));
+  document.getElementById('val-morning').textContent = morningMood;
+  document.getElementById('morningMoodLabel').textContent = morningLabels[morningMood];
+  updateHero();
+  saveDraft();
+}
+
+function calcMorningScore() {
+  // 早晨分 = 睡眠分60% + 晨間心情40%
+  const s = sliderVals;
+  const sleepH = parseFloat(document.getElementById('sleepHourH').value) || 0;
+  const sleepM = parseFloat(document.getElementById('sleepHourM').value) || 0;
+  const h = sleepH + sleepM / 60;
+  let sleepScore = 50;
+  if (!isNaN(h) && h > 0) {
+    if      (h >= 7 && h <= 9)  sleepScore = 100;
+    else if (h >= 6 && h < 7)   sleepScore = 80;
+    else if (h > 9 && h <= 10)  sleepScore = 80;
+    else if (h >= 5 && h < 6)   sleepScore = 55;
+    else if (h > 10 && h <= 11) sleepScore = 60;
+    else if (h >= 4 && h < 5)   sleepScore = 30;
+    else                         sleepScore = 10;
+  }
+  const morningMoodScore = (morningMood - 1) / 4 * 100;
+  return Math.min(100, Math.max(0, Math.round(sleepScore * 0.6 + morningMoodScore * 0.4)));
 }
 
 function calcScore() {
@@ -1400,11 +1467,33 @@ function calcScore() {
 }
 
 function updateHero() {
-  const todayScore = calcScore();
+  const circ = 326.7;
+  const labelEl = document.getElementById('heroScoreLabel');
+
+  // ── 決定顯示哪種分數 ──
+  let displayScore;
+  const isTodayComplete = !!localStorage.getItem(todayKey ? todayKey() : '');
+  const isMorningSaved  = sectionSaved.morning;
+  const isSleepFilled   = (parseFloat(document.getElementById('sleepHourH').value) || 0) > 0;
+
+  if (isTodayComplete) {
+    // 日終已完成 → 用完整的今日分
+    displayScore = calcScore();
+    if (labelEl) labelEl.textContent = '今日狀態';
+  } else if (isMorningSaved && isSleepFilled) {
+    // 晨間已填 → 用早晨分
+    displayScore = calcMorningScore();
+    if (labelEl) labelEl.textContent = '今早預估';
+  } else {
+    // 尚未填任何資料
+    displayScore = calcScore();
+    if (labelEl) labelEl.textContent = '今日狀態';
+  }
+
+  const todayScore = displayScore;
 
   // 今日狀態圓圈
   document.getElementById('heroScore').textContent = todayScore;
-  const circ = 326.7;
   document.getElementById('moodArc').style.strokeDashoffset = circ - (circ * todayScore / 100);
 
   // 趨勢警示計算
@@ -1680,6 +1769,9 @@ function updateSummary(id) {
     const good = document.querySelectorAll('.factor-chip.selected-good').length;
     const bad  = document.querySelectorAll('.factor-chip.selected-bad').length;
     el.textContent = `✦ ${good}　✕ ${bad}`;
+  } else if (id === 'morning') {
+    const labels = ['', '很差', '不好', '普通', '不錯', '很好'];
+    el.textContent = `現在感覺 ${labels[morningMood]}`;
   }
 }
 
@@ -1776,6 +1868,7 @@ function saveDraft() {
     medState: { ...medState },
     goodFactors, badFactors,
     note: document.getElementById('noteInput').value || '',
+    morningMood: morningMood,
     hrv:    document.getElementById('hrvInput').value || '',
     adTime: document.getElementById('med-ad-time').value || '',
     slTime: document.getElementById('med-sl-time').value || '',
@@ -1802,6 +1895,12 @@ function loadDraft() {
   document.getElementById('deepSleepHourH').value = d.deepH || '';
   document.getElementById('deepSleepHourM').value = d.deepM || '';
   document.getElementById('hrvInput').value        = d.hrv    || '';
+  if (d.morningMood != null) {
+    morningMood = d.morningMood;
+    document.getElementById('val-morning').textContent = morningMood;
+    const morningLabels = ['', '很差', '不好', '普通', '不錯', '很好'];
+    document.getElementById('morningMoodLabel').textContent = morningLabels[morningMood];
+  }
   document.getElementById('med-ad-time').value     = d.adTime || '';
   document.getElementById('med-sl-time').value     = d.slTime || '';
 
@@ -1891,7 +1990,8 @@ function collectDailyData() {
     adTime: document.getElementById('med-ad-time').value || null,
     slTime: document.getElementById('med-sl-time').value || null,
     factors: { good: goodFactors, bad: badFactors },
-    note: document.getElementById('noteInput').value || ''
+    note: document.getElementById('noteInput').value || '',
+    morningMood: morningMood
   };
 }
 
@@ -1950,6 +2050,14 @@ function loadSavedRecord() {
       if (d.factors.good && d.factors.good.includes(txt)) el.classList.add('selected-good');
       if (d.factors.bad  && d.factors.bad.includes(txt))  el.classList.add('selected-bad');
     });
+  }
+
+  // 還原晨間心情
+  if (d.morningMood != null) {
+    morningMood = d.morningMood;
+    document.getElementById('val-morning').textContent = morningMood;
+    const morningLabels = ['', '很差', '不好', '普通', '不錯', '很好'];
+    document.getElementById('morningMoodLabel').textContent = morningLabels[morningMood];
   }
 
   // 還原備註
