@@ -1343,6 +1343,29 @@
 
   <!-- ════ PANEL: 歷史日誌 ════ -->
   <section class="panel" id="panel-log" aria-label="歷史日誌" role="tabpanel">
+
+    <!-- 月曆區塊 -->
+    <div class="card" style="margin-bottom:16px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+        <button onclick="calPrevMonth()" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;padding:4px 10px;">‹</button>
+        <div id="calTitle" style="font-family:'DM Serif Display',serif;font-size:17px;color:var(--text);"></div>
+        <button onclick="calNextMonth()" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;padding:4px 10px;">›</button>
+      </div>
+      <!-- 星期標題 -->
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);text-align:center;margin-bottom:8px;">
+        <div style="font-size:11px;color:var(--muted);">日</div>
+        <div style="font-size:11px;color:var(--muted);">一</div>
+        <div style="font-size:11px;color:var(--muted);">二</div>
+        <div style="font-size:11px;color:var(--muted);">三</div>
+        <div style="font-size:11px;color:var(--muted);">四</div>
+        <div style="font-size:11px;color:var(--muted);">五</div>
+        <div style="font-size:11px;color:var(--muted);">六</div>
+      </div>
+      <div id="calGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;"></div>
+      <!-- 展開卡片 -->
+      <div id="calDetail" style="display:none;margin-top:14px;background:rgba(126,148,220,0.07);border-radius:12px;padding:14px 16px;"></div>
+    </div>
+
     <div class="insight-banner">
       <h3>✦ 正 / 負能量事件統計（近 30 天）</h3>
       <p>記錄到 <strong>23 次正面因素</strong> vs <strong>31 次負面因素</strong>。好消息是：正面事件的密度正在上升，上週比兩週前多了 3 次。繼續記錄，趨勢會越來越清晰。</p>
@@ -1380,7 +1403,7 @@ function switchTab(name, btn) {
   document.getElementById('panel-'+name).classList.add('active');
   btn.classList.add('active');
   if(name === 'overview') renderCharts();
-  if(name === 'log') renderLog();
+  if(name === 'log') { renderLog(); calInit(); }
 }
 
 /* ════ MOOD STEPPER ════ */
@@ -2306,6 +2329,138 @@ function renderCharts() {
 }
 
 /* ════ LOG ════ */
+
+/* ════ 月曆 ════ */
+let calYear, calMonth;
+
+function calInit() {
+  const now = new Date();
+  calYear  = now.getFullYear();
+  calMonth = now.getMonth();
+  renderCal();
+}
+
+function calPrevMonth() {
+  calMonth--;
+  if (calMonth < 0) { calMonth = 11; calYear--; }
+  document.getElementById('calDetail').style.display = 'none';
+  renderCal();
+}
+
+function calNextMonth() {
+  calMonth++;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  document.getElementById('calDetail').style.display = 'none';
+  renderCal();
+}
+
+function renderCal() {
+  const monthNames = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  document.getElementById('calTitle').textContent = `${calYear} 年 ${monthNames[calMonth]}`;
+
+  const grid = document.getElementById('calGrid');
+  grid.innerHTML = '';
+
+  const firstDay = new Date(calYear, calMonth, 1).getDay(); // 0=日
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+  const today = new Date();
+
+  // 空格補位
+  for (let i = 0; i < firstDay; i++) {
+    grid.appendChild(document.createElement('div'));
+  }
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const key = `mc_day_${calYear}_${calMonth + 1}_${d}`;
+    const raw = localStorage.getItem(key);
+    let score = null;
+    let hasData = false;
+    if (raw) {
+      try {
+        const rec = JSON.parse(raw);
+        score = rec.score;
+        hasData = true;
+      } catch(e) {}
+    }
+
+    const cell = document.createElement('div');
+    cell.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 2px;border-radius:8px;cursor:pointer;';
+
+    // 日期數字
+    const dateNum = document.createElement('div');
+    dateNum.style.cssText = 'font-size:13px;';
+    const isToday = (d === today.getDate() && calMonth === today.getMonth() && calYear === today.getFullYear());
+    if (isToday) {
+      dateNum.style.cssText += 'color:var(--gold);font-weight:600;';
+    } else {
+      dateNum.style.cssText += 'color:var(--muted);';
+    }
+    dateNum.textContent = d;
+
+    // 圓點
+    const dot = document.createElement('div');
+    dot.style.cssText = 'width:8px;height:8px;border-radius:50%;';
+    if (!hasData) {
+      dot.style.background = 'rgba(126,148,220,0.15)';
+    } else if (score >= 65) {
+      dot.style.background = '#7ec8a0';
+    } else if (score >= 40) {
+      dot.style.background = '#e8b86d';
+    } else {
+      dot.style.background = '#e87d7d';
+    }
+
+    cell.appendChild(dateNum);
+    cell.appendChild(dot);
+
+    if (hasData) {
+      cell.onclick = () => calShowDetail(calYear, calMonth + 1, d, raw);
+      cell.onmouseenter = () => cell.style.background = 'rgba(126,148,220,0.08)';
+      cell.onmouseleave = () => cell.style.background = 'transparent';
+    }
+
+    grid.appendChild(cell);
+  }
+}
+
+function calShowDetail(y, m, d, raw) {
+  const detail = document.getElementById('calDetail');
+  let rec;
+  try { rec = JSON.parse(raw); } catch(e) { return; }
+
+  const score = rec.score ?? '—';
+  const scoreColor = score >= 65 ? '#7ec8a0' : score >= 40 ? '#e8b86d' : '#e87d7d';
+
+  const totalH = rec.sleep?.totalHours ?? null;
+  const sleepStr = totalH != null
+    ? `${Math.floor(totalH)}h${Math.round((totalH % 1)*60) ? Math.round((totalH % 1)*60)+'m' : ''}`
+    : '—';
+
+  const meds = rec.meds ?? {};
+  const medTotal = ((meds.ad||0) + (meds.ax||0) + (meds.sl||0));
+  const medStr = medTotal > 0
+    ? `抗憂鬱 ${meds.ad||0}　抗焦慮 ${meds.ax||0}　安眠 ${meds.sl||0}`
+    : '無用藥記錄';
+
+  detail.style.display = 'block';
+  detail.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+      <div style="font-size:15px;color:var(--muted);">${y}/${m}/${d}</div>
+      <div style="font-family:'DM Serif Display',serif;font-size:28px;color:${scoreColor};">${score}</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:7px;font-size:14px;">
+      <div style="display:flex;justify-content:space-between;">
+        <span style="color:var(--muted);">🌙 睡眠</span>
+        <span style="color:var(--text);">${sleepStr}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <span style="color:var(--muted);">💊 用藥</span>
+        <span style="color:var(--text);text-align:right;">${medStr}</span>
+      </div>
+    </div>
+  `;
+}
+
 function renderLog() {
   const el = document.getElementById('logList');
   el.innerHTML = `
