@@ -2667,7 +2667,8 @@ const fbDb   = firebase.firestore();
 // ── 登入 / 登出 ──
 function fbSignIn() {
   const provider = new firebase.auth.GoogleAuthProvider();
-  fbAuth.signInWithPopup(provider).catch(() => {
+  // 手機 Safari 封鎖 popup，統一改用 redirect
+  fbAuth.signInWithRedirect(provider).catch(() => {
     document.getElementById('loginError').style.display = 'block';
   });
 }
@@ -2750,6 +2751,11 @@ async function fbUploadAllLocal(uid) {
   if (count > 0) await batch.commit();
   console.log(`MindCompass: 上傳 ${count} 筆本機資料到 Firestore`);
 }
+
+// ── 接收 redirect 登入結果 ──
+fbAuth.getRedirectResult().catch(() => {
+  document.getElementById('loginError').style.display = 'block';
+});
 
 // ── Auth 狀態監聽（核心入口）──
 fbAuth.onAuthStateChanged(async (user) => {
