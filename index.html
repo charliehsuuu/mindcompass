@@ -1405,7 +1405,7 @@ function switchTab(name, btn) {
 
   // 趨勢總覽、歷史日誌隱藏 Hero
   const hero = document.querySelector('.mood-hero');
-  if (hero) hero.style.display = (name === 'today') ? '' : 'none';
+  if (hero) hero.style.display = (name === 'record') ? '' : 'none';
 
   if(name === 'overview') renderCharts();
   if(name === 'log') { renderLog(); calInit(); }
