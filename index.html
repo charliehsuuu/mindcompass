@@ -1826,9 +1826,11 @@ function cancelSection(id) {
     localStorage.removeItem(todayKey());
     document.getElementById('lockedBanner').classList.remove('show');
     document.getElementById('recordFormWrap').classList.remove('form-locked');
-    ['mood', 'sleep', 'factor'].forEach(x => {
-      const doneTag = document.getElementById('done-' + x);
-      if (doneTag) doneTag.classList.remove('show');
+    ['morning', 'mood', 'sleep', 'factor'].forEach(x => {
+      const doneTag    = document.getElementById('done-' + x);
+      const summaryEl  = document.getElementById('summary-' + x);
+      if (doneTag)   doneTag.classList.remove('show');
+      if (summaryEl) summaryEl.classList.remove('show');
     });
     updateHero();
   }
@@ -2064,26 +2066,31 @@ function loadSavedRecord() {
   if (d.note) document.getElementById('noteInput').value = d.note;
 
   // 同步 sectionSaved 狀態
-  sectionSaved.mood   = true;
-  sectionSaved.sleep  = true;
-  sectionSaved.factor = true;
+  sectionSaved.mood    = true;
+  sectionSaved.sleep   = true;
+  sectionSaved.factor  = true;
+  if (d.morningMood != null) sectionSaved.morning = true;
+
+  // 更新各區段摘要文字（讓 lockRecordForm 顯示正確內容）
+  ['mood', 'sleep', 'factor'].forEach(id => updateSummary(id));
+  if (sectionSaved.morning) updateSummary('morning');
 }
 
 function lockRecordForm() {
   document.getElementById('lockedBanner').classList.add('show');
   document.getElementById('recordFormWrap').classList.add('form-locked');
-  // 各區塊顯示「已完成」標籤並收合
-  ['mood', 'sleep', 'factor'].forEach(id => {
+  // 各區塊顯示「已完成」標籤並收合（含晨間狀態）
+  ['morning', 'mood', 'sleep', 'factor'].forEach(id => {
     updateSummary(id);
     const body    = document.getElementById('body-' + id);
     const toggle  = document.getElementById('toggle-' + id);
     const summary = document.getElementById('summary-' + id);
     const doneTag = document.getElementById('done-' + id);
-    if (!body.classList.contains('collapsed')) {
+    if (body && !body.classList.contains('collapsed')) {
       body.classList.add('collapsed');
-      toggle.classList.add('collapsed');
+      if (toggle) toggle.classList.add('collapsed');
     }
-    summary.classList.remove('show');
+    if (summary) summary.classList.add('show');
     if (doneTag) doneTag.classList.add('show');
   });
 }
