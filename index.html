@@ -747,7 +747,7 @@
     from { transform: rotate(0deg); }
     to   { transform: rotate(-15deg); }
   }
-  @media screen and (orientation: landscape) {
+  @media screen and (orientation: landscape) and (max-width: 768px) {
     #landscape-overlay { display: flex; }
     body > *:not(#landscape-overlay) { visibility: hidden; }
   }
@@ -2490,7 +2490,7 @@ if (localStorage.getItem(todayKey())) {
   loadDraft();
 }
   /* ── 鎖定直向模式 ── */
-  if (screen.orientation && screen.orientation.lock) {
+  if (screen.orientation && screen.orientation.lock && window.innerWidth <= 768) {
     screen.orientation.lock('portrait').catch(() => {});
   }
 
