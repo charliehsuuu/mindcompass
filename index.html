@@ -919,7 +919,7 @@
   <main>
 
   <!-- Mood Hero -->
-  <section class="mood-hero" aria-label="情緒指數儀表板">
+  <section class="mood-hero" id="moodHero" aria-label="情緒指數儀表板">
     <div class="mood-rings">
       <!-- 今日狀態圓圈 -->
       <div class="mood-ring-wrap">
@@ -1404,8 +1404,14 @@ function switchTab(name, btn) {
   btn.classList.add('active');
 
   // 趨勢總覽、歷史日誌隱藏 Hero
-  const hero = document.querySelector('.mood-hero');
-  if (hero) hero.style.display = (name === 'record') ? 'flex' : 'none';
+  const hero = document.getElementById('moodHero');
+  if (hero) {
+    if (name === 'record') {
+      hero.style.removeProperty('display');  // 恢復 CSS 預設（display:flex）
+    } else {
+      hero.style.display = 'none';
+    }
+  }
 
   if(name === 'overview') renderCharts();
   if(name === 'log') { renderLog(); calInit(); }
