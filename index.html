@@ -2753,8 +2753,14 @@ async function fbUploadAllLocal(uid) {
 }
 
 // ── 接收 redirect 登入結果 ──
-fbAuth.getRedirectResult().catch(() => {
-  document.getElementById('loginError').style.display = 'block';
+fbAuth.getRedirectResult().then(result => {
+  // redirect 登入成功：onAuthStateChanged 會自動處理
+}).catch(err => {
+  // 只有真正登入失敗才顯示錯誤（排除初始載入的 null result）
+  if (err && err.code) {
+    console.warn('[Auth] redirect error:', err.code);
+    document.getElementById('loginError').style.display = 'block';
+  }
 });
 
 // ── Auth 狀態監聽（核心入口）──
