@@ -1402,6 +1402,11 @@ function switchTab(name, btn) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('panel-'+name).classList.add('active');
   btn.classList.add('active');
+
+  // 趨勢總覽、歷史日誌隱藏 Hero
+  const hero = document.querySelector('.mood-hero');
+  if (hero) hero.style.display = (name === 'today') ? '' : 'none';
+
   if(name === 'overview') renderCharts();
   if(name === 'log') { renderLog(); calInit(); }
 }
