@@ -919,6 +919,17 @@
   <main>
 
   <!-- Mood Hero -->
+  
+  <!-- Tabs -->
+  <nav class="tabs" aria-label="頁面功能切換" role="tablist">
+    <button class="tab-btn active" onclick="switchTab('record',this)">📝 今日記錄</button>
+    <button class="tab-btn" onclick="switchTab('overview',this)">📊 趨勢總覽</button>
+    <button class="tab-btn" onclick="switchTab('log',this)">📋 歷史日誌</button>
+  </nav>
+
+  <!-- ════ PANEL: 今日記錄 ════ -->
+  <section class="panel active" id="panel-record" aria-label="今日記錄" role="tabpanel">
+
   <section class="mood-hero" id="moodHero" aria-label="情緒指數儀表板">
     <div class="mood-rings">
       <!-- 今日狀態圓圈 -->
@@ -978,17 +989,7 @@
     </div>
   </section>
 
-  <!-- Tabs -->
-  <nav class="tabs" aria-label="頁面功能切換" role="tablist">
-    <button class="tab-btn active" onclick="switchTab('record',this)">📝 今日記錄</button>
-    <button class="tab-btn" onclick="switchTab('overview',this)">📊 趨勢總覽</button>
-    <button class="tab-btn" onclick="switchTab('log',this)">📋 歷史日誌</button>
-  </nav>
-
-  <!-- ════ PANEL: 今日記錄 ════ -->
-  <section class="panel active" id="panel-record" aria-label="今日記錄" role="tabpanel">
-
-    <!-- 今日鎖定 banner -->
+  <!-- 今日鎖定 banner -->
     <div class="locked-banner" id="lockedBanner">
       <span style="font-size:22px">✅</span>
       <div style="flex:1">
@@ -1404,14 +1405,7 @@ function switchTab(name, btn) {
   btn.classList.add('active');
 
   // 趨勢總覽、歷史日誌隱藏 Hero
-  const hero = document.getElementById('moodHero');
-  if (hero) {
-    if (name === 'record') {
-      hero.style.removeProperty('display');  // 恢復 CSS 預設（display:flex）
-    } else {
-      hero.style.display = 'none';
-    }
-  }
+  // Hero 在 panel-record 內，Tab 切換自動控制顯示
 
   if(name === 'overview') renderCharts();
   if(name === 'log') { renderLog(); calInit(); }
