@@ -951,6 +951,7 @@
         <div class="mood-score-label">
           <div class="score" id="heroScore">72</div>
           <div class="score-sub" id="heroScoreLabel">今日狀態</div>
+          <div id="heroSubNote" style="font-size:11px;color:var(--warn);margin-top:3px;min-height:14px;"></div>
         </div>
       </div>
 
@@ -1028,6 +1029,14 @@
         </div>
         <div style="font-size:12px;color:var(--muted);margin-top:10px;line-height:1.6;">
           1 很差　2 不好　3 普通　4 不錯　5 很好
+        </div>
+        <div style="margin-top:14px;">
+          <div style="font-size:13px;color:var(--muted);margin-bottom:6px;letter-spacing:0.5px">晨間 HRV (ms) <span style="font-size:11px;opacity:0.6">· 從健康 App 查看</span></div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <input type="number" inputmode="numeric" class="hrv-input" id="hrvMorningInput"
+              min="0" max="200" placeholder="從健康 App 查看"
+              oninput="updateHero(); saveDraft();" aria-label="晨間 HRV 數值（毫秒）">
+          </div>
         </div>
         <div style="display:flex;justify-content:flex-end;margin-top:14px;">
           <button id="section-btn-morning" class="section-save-btn" onclick="handleSectionBtn(event,'morning')">儲存</button>
@@ -1419,24 +1428,47 @@ function stepMorning(delta) {
   saveDraft();
 }
 
-function calcMorningScore() {
-  // 早晨分 = 睡眠分60% + 晨間心情40%
-  const s = sliderVals;
+function calcHRVScore(hrv) {
+  if (!hrv || hrv <= 0) return 50;
+  if (hrv >= 65) return 100;
+  if (hrv >= 55) return 80;
+  if (hrv >= 45) return 60;
+  if (hrv >= 38) return 40;
+  return 20;
+}
+
+function getYesterdayRecord() {
+  const d = new Date(); d.setDate(d.getDate() - 1);
+  const key = `mc_day_${d.getFullYear()}_${d.getMonth()+1}_${d.getDate()}`;
+  const raw = localStorage.getItem(key);
+  if (!raw) return null;
+  try { return JSON.parse(raw); } catch(e) { return null; }
+}
+
+function calcSleepScore() {
   const sleepH = parseFloat(document.getElementById('sleepHourH').value) || 0;
   const sleepM = parseFloat(document.getElementById('sleepHourM').value) || 0;
   const h = sleepH + sleepM / 60;
-  let sleepScore = 50;
-  if (!isNaN(h) && h > 0) {
-    if      (h >= 7 && h <= 9)  sleepScore = 100;
-    else if (h >= 6 && h < 7)   sleepScore = 80;
-    else if (h > 9 && h <= 10)  sleepScore = 80;
-    else if (h >= 5 && h < 6)   sleepScore = 55;
-    else if (h > 10 && h <= 11) sleepScore = 60;
-    else if (h >= 4 && h < 5)   sleepScore = 30;
-    else                         sleepScore = 10;
-  }
+  if (!h || h <= 0) return 50;
+  if (h >= 7 && h <= 9)  return 100;
+  if (h >= 6 && h < 7)   return 80;
+  if (h > 9 && h <= 10)  return 80;
+  if (h >= 5 && h < 6)   return 55;
+  if (h > 10 && h <= 11) return 60;
+  if (h >= 4 && h < 5)   return 30;
+  return 10;
+}
+
+function calcMorningScore() {
+  // 開場分 = 昨日分25% + 睡眠分35% + 晨間心情25% + HRV15%
+  const yesterday = getYesterdayRecord();
+  const yesterdayScore = yesterday ? (yesterday.score || 50) : 50;
+  const sleepScore = calcSleepScore();
   const morningMoodScore = (morningMood - 1) / 4 * 100;
-  return Math.min(100, Math.max(0, Math.round(sleepScore * 0.6 + morningMoodScore * 0.4)));
+  const hrv = parseFloat(document.getElementById('hrvMorningInput').value) || 0;
+  const hrvScore = calcHRVScore(hrv);
+  const opening = yesterdayScore * 0.25 + sleepScore * 0.35 + morningMoodScore * 0.25 + hrvScore * 0.15;
+  return Math.min(100, Math.max(0, Math.round(opening)));
 }
 
 function calcScore() {
@@ -1468,7 +1500,18 @@ function calcScore() {
     else if (h >= 4 && h < 5)   sleepScore = 30;
     else                         sleepScore = 10; // 未滿 4 小時
   }
-  // 自我評估（沉穩/普通/淺眠）僅供記錄，不影響分數
+  // 睡眠品質修正
+  if (sleepQuality === 'good') sleepScore = Math.min(100, sleepScore + 5);
+  if (sleepQuality === 'bad')  sleepScore = Math.max(0,   sleepScore - 8);
+
+  // 深層睡眠修正
+  const deepH = (parseFloat(document.getElementById('deepSleepHourH').value) || 0)
+              + (parseFloat(document.getElementById('deepSleepHourM').value) || 0) / 60;
+  if (deepH > 0) {
+    if      (deepH >= 1.5) sleepScore = Math.min(100, sleepScore + 8);
+    else if (deepH >= 1.0) sleepScore = Math.min(100, sleepScore + 4);
+    else if (deepH <  0.5) sleepScore = Math.max(0,   sleepScore - 6);
+  }
 
   // ── 因素分（0-100）：正面 / 負面各自貢獻一半 ──
   // 全選正面 → 100，全無 → 50，全選負面 → 0
@@ -1480,9 +1523,9 @@ function calcScore() {
     ? ((goodCount / totalGoodChips) * 100 + (1 - badCount / totalBadChips) * 100) / 2
     : 50;
 
-  // ── 加權平均：心情 25% + 睡眠 50% + 因素 25% ──
+  // ── 加權平均：心情 35% + 睡眠 40% + 因素 25% ──
   return Math.min(100, Math.max(0, Math.round(
-    moodScore * 0.25 + sleepScore * 0.50 + factorScore * 0.25
+    moodScore * 0.35 + sleepScore * 0.40 + factorScore * 0.25
   )));
 }
 
@@ -1490,25 +1533,40 @@ function updateHero() {
   const circ = 326.7;
   const labelEl = document.getElementById('heroScoreLabel');
 
-  // ── 決定顯示哪種分數 ──
+  // ── 決定顯示哪種分數（三狀態）──
   let displayScore;
+  let heroSubNote = '';
   const isTodayComplete = !!localStorage.getItem(todayKey ? todayKey() : '');
   const isMorningSaved  = sectionSaved.morning;
   const isSleepFilled   = (parseFloat(document.getElementById('sleepHourH').value) || 0) > 0;
+  const isMorningFilled = isMorningSaved || morningMood !== 3
+    || (parseFloat(document.getElementById('hrvMorningInput')?.value) || 0) > 0;
 
   if (isTodayComplete) {
-    // 日終已完成 → 用完整的今日分
+    // 狀態 1：日終已完成 → 完整今日狀態分
     displayScore = calcScore();
     if (labelEl) labelEl.textContent = '今日狀態';
-  } else if (isMorningSaved && isSleepFilled) {
-    // 晨間已填 → 用早晨分
+  } else if (isMorningFilled && isSleepFilled) {
+    // 狀態 2：晨間已填 → 開場分，加提示
     displayScore = calcMorningScore();
-    if (labelEl) labelEl.textContent = '今早預估';
+    if (labelEl) labelEl.textContent = '今日開場';
+    heroSubNote = '晚間記錄尚未填寫';
   } else {
-    // 尚未填任何資料
-    displayScore = calcScore();
-    if (labelEl) labelEl.textContent = '今日狀態';
+    // 狀態 3：完全未填 → 昨日分或 —
+    const yesterday = getYesterdayRecord();
+    if (yesterday && yesterday.score != null) {
+      displayScore = yesterday.score;
+      if (labelEl) labelEl.textContent = '等待記錄';
+    } else {
+      displayScore = 0;
+      if (labelEl) labelEl.textContent = '等待記錄';
+      document.getElementById('heroScore').textContent = '—';
+    }
   }
+
+  // 小字提示（晚間未填）
+  const noteEl = document.getElementById('heroSubNote');
+  if (noteEl) noteEl.textContent = heroSubNote;
 
   const todayScore = displayScore;
 
@@ -1891,6 +1949,7 @@ function saveDraft() {
     goodFactors, badFactors,
     note: document.getElementById('noteInput').value || '',
     morningMood: morningMood,
+    hrvMorning: document.getElementById('hrvMorningInput')?.value || '',
     hrv:    document.getElementById('hrvInput').value || '',
     sectionSaved: { ...sectionSaved }
   };
@@ -1920,6 +1979,10 @@ function loadDraft() {
     document.getElementById('val-morning').textContent = morningMood;
     const morningLabels = ['', '很差', '不好', '普通', '不錯', '很好'];
     document.getElementById('morningMoodLabel').textContent = morningLabels[morningMood];
+  }
+  if (d.hrvMorning) {
+    const hrvMEl = document.getElementById('hrvMorningInput');
+    if (hrvMEl) hrvMEl.value = d.hrvMorning;
   }
 
   // 還原睡眠品質
@@ -2004,7 +2067,8 @@ function collectDailyData() {
       quality: sleepQuality
     },
     meds: { ...medState },
-    hrv:    parseFloat(document.getElementById('hrvInput').value) || null,
+    hrv: (parseFloat(document.getElementById('hrvInput')?.value) || null)
+      ?? (parseFloat(document.getElementById('hrvMorningInput')?.value) || null),
     factors: { good: goodFactors, bad: badFactors },
     note: document.getElementById('noteInput').value || '',
     morningMood: morningMood
@@ -2054,7 +2118,12 @@ function loadSavedRecord() {
   }
 
   // 還原 HRV
-  if (d.hrv != null) document.getElementById('hrvInput').value    = d.hrv;
+  if (d.hrv != null) {
+    const hrvEl = document.getElementById('hrvInput');
+    if (hrvEl) hrvEl.value = d.hrv;
+    const hrvMEl = document.getElementById('hrvMorningInput');
+    if (hrvMEl) hrvMEl.value = d.hrv;
+  }
 
   // 還原影響因素
   if (d.factors) {
