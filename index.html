@@ -1539,7 +1539,9 @@ function updateHero() {
   const isTodayComplete = !!localStorage.getItem(todayKey ? todayKey() : '');
   const isMorningSaved  = sectionSaved.morning;
   const isSleepFilled   = (parseFloat(document.getElementById('sleepHourH').value) || 0) > 0;
-  const isMorningFilled = isMorningSaved || morningMood !== 3
+  // 從 localStorage 判斷今天是否已儲存晨間記錄（跨頁面重開也能偵測）
+  const todayMorningRaw = localStorage.getItem(morningKey ? morningKey() : '');
+  const isMorningFilled = !!todayMorningRaw || isMorningSaved
     || (parseFloat(document.getElementById('hrvMorningInput')?.value) || 0) > 0;
 
   if (isTodayComplete) {
@@ -1873,6 +1875,11 @@ function handleSectionBtn(event, id) {
   }
 }
 
+function morningKey() {
+  const d = new Date();
+  return `mc_morning_${d.getFullYear()}_${d.getMonth()+1}_${d.getDate()}`;
+}
+
 function saveSection(id) {
   sectionSaved[id] = true;
   updateSectionBtn(id);
@@ -1886,6 +1893,16 @@ function saveSection(id) {
   }
   summary.classList.add('show');
 
+  // 晨間區段 → 額外存入 mc_morning_ key，讓 Hero 跨頁面也能判斷
+  if (id === 'morning') {
+    const morningData = {
+      morningMood: morningMood,
+      hrv: parseFloat(document.getElementById('hrvMorningInput')?.value) || null,
+      ts: Date.now()
+    };
+    localStorage.setItem(morningKey(), JSON.stringify(morningData));
+  }
+
   // 三個區段都已儲存 → 自動寫入今日完整紀錄
   if (sectionSaved.mood && sectionSaved.sleep && sectionSaved.factor) {
     saveRecord();
@@ -1893,6 +1910,7 @@ function saveSection(id) {
     saveDraft();
     showToast('✓ 已儲存');
   }
+  updateHero(); // 儲存後立即更新 Hero
 }
 
 function cancelSection(id) {
@@ -2198,6 +2216,7 @@ function saveRecord() {
 function cancelTodayRecord() {
   localStorage.removeItem(todayKey());
   localStorage.removeItem(todayDayKey());
+  if (typeof morningKey === 'function') localStorage.removeItem(morningKey());
   document.getElementById('lockedBanner').classList.remove('show');
   document.getElementById('recordFormWrap').classList.remove('form-locked');
   ['mood', 'sleep', 'factor'].forEach(id => {
