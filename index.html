@@ -428,6 +428,7 @@
   }
   .locked-banner.show { display: flex; }
   .form-locked .save-btn { pointer-events: none; opacity: 0.5; }
+  .form-locked .section-save-btn { display: none; }
 
   .section-done-tag {
     display: none;
@@ -1007,7 +1008,7 @@
         <div class="section-header-left">
           <div class="section-dot" style="background:var(--warn)"></div>
           <span class="section-title">🌅 晨間狀態</span>
-          <span style="font-size:12px;color:var(--muted);margin-left:6px;">起床後填，立即看今早預估</span>
+          <span id="morningSubtitle" style="font-size:12px;color:var(--muted);margin-left:6px;">起床後填，立即看今早預估</span>
         </div>
         <div class="section-header-right">
           <span class="section-summary" id="summary-morning"></span>
@@ -1901,6 +1902,9 @@ function saveSection(id) {
       ts: Date.now()
     };
     localStorage.setItem(morningKey(), JSON.stringify(morningData));
+    // 收合後隱藏副標題，讓 header 單行排列
+    const subtitleEl = document.getElementById('morningSubtitle');
+    if (subtitleEl) subtitleEl.style.display = 'none';
   }
 
   // 三個區段都已儲存 → 自動寫入今日完整紀錄
@@ -1916,6 +1920,12 @@ function saveSection(id) {
 function cancelSection(id) {
   sectionSaved[id] = false;
   updateSectionBtn(id);
+  // 晨間取消 → 恢復副標題
+  if (id === 'morning') {
+    const subtitleEl = document.getElementById('morningSubtitle');
+    if (subtitleEl) subtitleEl.style.display = '';
+    if (typeof morningKey === 'function') localStorage.removeItem(morningKey());
+  }
   // 若之前已是「今日完成」狀態，取消其中一段 → 移除完整紀錄
   if (localStorage.getItem(todayDayKey())) {
     localStorage.removeItem(todayDayKey());
@@ -2179,6 +2189,10 @@ function lockRecordForm() {
   document.getElementById('lockedBanner').classList.add('show');
   document.getElementById('recordFormWrap').classList.add('form-locked');
   // 各區塊顯示「已完成」標籤並收合（含晨間狀態）
+  // 晨間副標題收合
+  const subtitleEl = document.getElementById('morningSubtitle');
+  if (subtitleEl) subtitleEl.style.display = 'none';
+
   ['morning', 'mood', 'sleep', 'factor'].forEach(id => {
     updateSummary(id);
     const body    = document.getElementById('body-' + id);
