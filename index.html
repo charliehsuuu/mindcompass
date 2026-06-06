@@ -2721,6 +2721,50 @@ if (localStorage.getItem(todayKey())) {
   // 還沒完整儲存 → 嘗試載入今日草稿
   loadDraft();
 }
+  /* ── URL 參數自動填入（Apple 捷徑用）──
+     支援：?hrv=53&sleep=7.5&deep=0.7
+     只在今天尚未完成記錄時生效 ── */
+  (function applyURLParams() {
+    if (localStorage.getItem(todayKey())) return; // 已完成，不覆蓋
+    const params = new URLSearchParams(window.location.search);
+
+    // HRV
+    const hrv = parseFloat(params.get('hrv'));
+    if (!isNaN(hrv) && hrv > 0) {
+      const el = document.getElementById('hrvMorningInput');
+      if (el) { el.value = hrv; }
+    }
+
+    // 睡眠時數 (小時，可含小數，如 7.5)
+    const sleep = parseFloat(params.get('sleep'));
+    if (!isNaN(sleep) && sleep > 0) {
+      const h = Math.floor(sleep);
+      const m = Math.round((sleep - h) * 60);
+      const hEl = document.getElementById('sleepHourH');
+      const mEl = document.getElementById('sleepHourM');
+      if (hEl) hEl.value = h;
+      if (mEl) mEl.value = m || '';
+    }
+
+    // 深睡時數 (小時，可含小數，如 0.7)
+    const deep = parseFloat(params.get('deep'));
+    if (!isNaN(deep) && deep > 0) {
+      const dh = Math.floor(deep);
+      const dm = Math.round((deep - dh) * 60);
+      const dhEl = document.getElementById('deepSleepHourH');
+      const dmEl = document.getElementById('deepSleepHourM');
+      if (dhEl) dhEl.value = dh;
+      if (dmEl) dmEl.value = dm || '';
+    }
+
+    // 有任何參數填入就更新 Hero 與摘要
+    if (!isNaN(hrv) || !isNaN(sleep) || !isNaN(deep)) {
+      updateHero();
+      updateSummary('sleep');
+      saveDraft();
+    }
+  })();
+
   /* ── 鎖定直向模式 ── */
   if (screen.orientation && screen.orientation.lock && window.innerWidth <= 768) {
     screen.orientation.lock('portrait').catch(() => {});
