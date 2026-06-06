@@ -1159,15 +1159,7 @@
                 <span style="color:var(--muted);font-size:17px">分</span>
               </div>
             </div>
-            <div>
-              <div style="font-size:13px;color:var(--muted);margin-bottom:6px;letter-spacing:0.5px">HRV 數值 <span style="font-size:11px;opacity:0.6">· 自律神經客觀指標 (ms)</span></div>
-              <div style="display:flex;align-items:center;gap:8px">
-                <input type="number" inputmode="numeric" class="hrv-input" id="hrvInput"
-                  value="" min="0" max="300" step="1" placeholder="—"
-                  oninput="saveDraft();" aria-label="HRV 數值（毫秒）">
-                <span style="color:var(--muted);font-size:17px">ms</span>
-              </div>
-            </div>
+
           </div>
           <div>
             <div style="font-size:13px;color:var(--muted);margin-bottom:8px;letter-spacing:0.5px">自我評估</div>
@@ -1976,7 +1968,7 @@ function saveDraft() {
     note: document.getElementById('noteInput').value || '',
     morningMood: morningMood,
     hrvMorning: document.getElementById('hrvMorningInput')?.value || '',
-    hrv:    document.getElementById('hrvInput').value || '',
+    hrv:    document.getElementById('hrvMorningInput')?.value || '',
     sectionSaved: { ...sectionSaved }
   };
   localStorage.setItem(draftKey(), JSON.stringify(draft));
@@ -1999,7 +1991,10 @@ function loadDraft() {
   document.getElementById('sleepHourM').value    = d.sleepM || '';
   document.getElementById('deepSleepHourH').value = d.deepH || '';
   document.getElementById('deepSleepHourM').value = d.deepM || '';
-  document.getElementById('hrvInput').value        = d.hrv    || '';
+  if (d.hrv) {
+    const hrvMEl = document.getElementById('hrvMorningInput');
+    if (hrvMEl) hrvMEl.value = d.hrv;
+  }
   if (d.morningMood != null) {
     morningMood = d.morningMood;
     document.getElementById('val-morning').textContent = morningMood;
@@ -2093,8 +2088,7 @@ function collectDailyData() {
       quality: sleepQuality
     },
     meds: { ...medState },
-    hrv: (parseFloat(document.getElementById('hrvInput')?.value) || null)
-      ?? (parseFloat(document.getElementById('hrvMorningInput')?.value) || null),
+    hrv: parseFloat(document.getElementById('hrvMorningInput')?.value) || null,
     factors: { good: goodFactors, bad: badFactors },
     note: document.getElementById('noteInput').value || '',
     morningMood: morningMood
@@ -2145,8 +2139,6 @@ function loadSavedRecord() {
 
   // 還原 HRV
   if (d.hrv != null) {
-    const hrvEl = document.getElementById('hrvInput');
-    if (hrvEl) hrvEl.value = d.hrv;
     const hrvMEl = document.getElementById('hrvMorningInput');
     if (hrvMEl) hrvMEl.value = d.hrv;
   }
