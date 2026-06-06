@@ -769,6 +769,54 @@
   }
   .hrv-input:focus { border-color: #e8b86d; box-shadow: 0 0 0 2px rgba(232,184,109,0.18); }
   .hrv-input::placeholder { font-size: 11px; font-family: 'DM Sans', sans-serif; color: var(--muted); opacity: 0.6; letter-spacing: 0.3px; }
+
+  /* ── Trend Alert ── */
+  .trend-alert {
+    display: none;
+    margin-top: 10px;
+    font-size: 14px;
+    line-height: 1.6;
+    border-radius: 8px;
+    padding: 8px 12px;
+  }
+  .trend-alert.show { display: block; }
+  .trend-alert.level-info {
+    color: var(--muted);
+    background: rgba(126,148,220,0.08);
+    border: 1px solid rgba(126,148,220,0.18);
+  }
+  .trend-alert.level-mild {
+    color: var(--warn);
+    background: rgba(232,184,109,0.10);
+    border: 1px solid rgba(232,184,109,0.25);
+  }
+  .trend-alert.level-strong {
+    color: var(--danger);
+    background: rgba(232,125,125,0.10);
+    border: 1px solid rgba(232,125,125,0.25);
+  }
+
+  /* ── Final Score Row ── */
+  .final-score-row {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .final-score-label {
+    font-size: 13px;
+    color: var(--muted);
+    letter-spacing: 0.5px;
+  }
+  .final-score-val {
+    font-family: 'DM Serif Display', serif;
+    font-size: 28px;
+    color: var(--text);
+    line-height: 1;
+  }
+
+  /* ── Dimmed trend ring ── */
+  #trendRingWrap.dimmed { opacity: 0.35; }
   .med-time-wrap {
     display: flex;
     align-items: center;
@@ -1152,11 +1200,13 @@
               <div style="font-size:13px;color:var(--muted);margin-bottom:6px;letter-spacing:0.5px">深層睡眠時間</div>
               <div style="display:flex;align-items:center;gap:8px">
                 <input type="number" inputmode="numeric" class="sleep-hour-input" id="deepSleepHourH"
-                  value="" min="0" max="8" step="1" placeholder="—">
+                  value="" min="0" max="8" step="1" placeholder="—"
+                  oninput="updateHero(); updateSummary('sleep'); saveDraft();">
                 <span style="color:var(--muted);font-size:17px">小時</span>
                 <input type="number" inputmode="numeric" class="sleep-hour-input" id="deepSleepHourM"
                   value="" min="0" max="59" step="5" placeholder="—"
-                  style="width:64px">
+                  style="width:64px"
+                  oninput="updateHero(); updateSummary('sleep'); saveDraft();">
                 <span style="color:var(--muted);font-size:17px">分</span>
               </div>
             </div>
@@ -2224,10 +2274,21 @@ function cancelTodayRecord() {
   if (typeof morningKey === 'function') localStorage.removeItem(morningKey());
   document.getElementById('lockedBanner').classList.remove('show');
   document.getElementById('recordFormWrap').classList.remove('form-locked');
-  ['mood', 'sleep', 'factor'].forEach(id => {
-    const doneTag = document.getElementById('done-' + id);
-    if (doneTag) doneTag.classList.remove('show');
+
+  // 重置所有區段狀態（含 morning）
+  ['morning', 'mood', 'sleep', 'factor'].forEach(id => {
+    sectionSaved[id] = false;
+    updateSectionBtn(id);
+    const doneTag   = document.getElementById('done-' + id);
+    const summaryEl = document.getElementById('summary-' + id);
+    if (doneTag)   doneTag.classList.remove('show');
+    if (summaryEl) summaryEl.classList.remove('show');
   });
+
+  // 還原晨間副標題
+  const subtitleEl = document.getElementById('morningSubtitle');
+  if (subtitleEl) subtitleEl.style.display = '';
+
   updateHero();
   showToast('已取消今日紀錄');
 }
