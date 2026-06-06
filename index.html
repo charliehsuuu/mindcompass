@@ -1197,13 +1197,13 @@
               </div>
             </div>
             <div>
-              <div style="font-size:13px;color:var(--muted);margin-bottom:6px;letter-spacing:0.5px">深層睡眠時間</div>
+              <div style="font-size:13px;color:var(--muted);margin-bottom:6px;letter-spacing:0.5px">REM 快速動眼期 <span style="font-size:11px;opacity:0.6">· 從健康 App 查看</span></div>
               <div style="display:flex;align-items:center;gap:8px">
-                <input type="number" inputmode="numeric" class="sleep-hour-input" id="deepSleepHourH"
-                  value="" min="0" max="8" step="1" placeholder="—"
+                <input type="number" inputmode="numeric" class="sleep-hour-input" id="remHourH"
+                  value="" min="0" max="5" step="1" placeholder="—"
                   oninput="updateHero(); updateSummary('sleep'); saveDraft();">
                 <span style="color:var(--muted);font-size:17px">小時</span>
-                <input type="number" inputmode="numeric" class="sleep-hour-input" id="deepSleepHourM"
+                <input type="number" inputmode="numeric" class="sleep-hour-input" id="remHourM"
                   value="" min="0" max="59" step="5" placeholder="—"
                   style="width:64px"
                   oninput="updateHero(); updateSummary('sleep'); saveDraft();">
@@ -1374,9 +1374,9 @@
     </div>
 
     <div class="card">
-      <h3>深層睡眠趨勢（近 14 天）</h3>
+      <h3>REM 快速動眼期趨勢（近 14 天）</h3>
       <div class="chart-wrap sm">
-        <canvas id="deepSleepChart"></canvas>
+        <canvas id="remChart"></canvas>
       </div>
     </div>
   </section>
@@ -1491,14 +1491,25 @@ function calcSleepScore() {
   const sleepH = parseFloat(document.getElementById('sleepHourH').value) || 0;
   const sleepM = parseFloat(document.getElementById('sleepHourM').value) || 0;
   const h = sleepH + sleepM / 60;
-  if (!h || h <= 0) return 50;
-  if (h >= 7 && h <= 9)  return 100;
-  if (h >= 6 && h < 7)   return 80;
-  if (h > 9 && h <= 10)  return 80;
-  if (h >= 5 && h < 6)   return 55;
-  if (h > 10 && h <= 11) return 60;
-  if (h >= 4 && h < 5)   return 30;
-  return 10;
+  let score;
+  if (!h || h <= 0)          score = 50;
+  else if (h >= 7 && h <= 9)  score = 100;
+  else if (h >= 6 && h < 7)   score = 80;
+  else if (h > 9 && h <= 10)  score = 80;
+  else if (h >= 5 && h < 6)   score = 55;
+  else if (h > 10 && h <= 11) score = 60;
+  else if (h >= 4 && h < 5)   score = 30;
+  else                         score = 10;
+
+  // REM 修正：影響開場分
+  const remH = (parseFloat(document.getElementById('remHourH')?.value) || 0)
+             + (parseFloat(document.getElementById('remHourM')?.value) || 0) / 60;
+  const remMin = remH * 60;
+  if (remMin >= 100)              score = Math.min(100, score + 8);
+  else if (remMin >= 60)          score = Math.min(100, score + 3);
+  else if (remMin > 0 && remMin < 45) score = Math.max(0,   score - 8);
+
+  return score;
 }
 
 function calcMorningScore() {
@@ -1546,14 +1557,13 @@ function calcScore() {
   if (sleepQuality === 'good') sleepScore = Math.min(100, sleepScore + 5);
   if (sleepQuality === 'bad')  sleepScore = Math.max(0,   sleepScore - 8);
 
-  // 深層睡眠修正
-  const deepH = (parseFloat(document.getElementById('deepSleepHourH').value) || 0)
-              + (parseFloat(document.getElementById('deepSleepHourM').value) || 0) / 60;
-  if (deepH > 0) {
-    if      (deepH >= 1.5) sleepScore = Math.min(100, sleepScore + 8);
-    else if (deepH >= 1.0) sleepScore = Math.min(100, sleepScore + 4);
-    else if (deepH <  0.5) sleepScore = Math.max(0,   sleepScore - 6);
-  }
+  // REM 修正（快速動眼期）
+  const remH = (parseFloat(document.getElementById('remHourH')?.value) || 0)
+             + (parseFloat(document.getElementById('remHourM')?.value) || 0) / 60;
+  const remMin = remH * 60;
+  if (remMin >= 100)              sleepScore = Math.min(100, sleepScore + 8);
+  else if (remMin >= 60)          sleepScore = Math.min(100, sleepScore + 3);
+  else if (remMin > 0 && remMin < 45) sleepScore = Math.max(0,   sleepScore - 8);
 
   // ── 因素分（0-100）：正面 / 負面各自貢獻一半 ──
   // 全選正面 → 100，全無 → 50，全選負面 → 0
@@ -1882,11 +1892,11 @@ function updateSummary(id) {
   } else if (id === 'sleep') {
     const sH = document.getElementById('sleepHourH').value || '';
     const sM = document.getElementById('sleepHourM').value || '';
-    const dH = document.getElementById('deepSleepHourH').value || '';
-    const dM = document.getElementById('deepSleepHourM').value || '';
+    const rH = document.getElementById('remHourH')?.value || '';
+    const rM = document.getElementById('remHourM')?.value || '';
     const sleepStr = sH ? `${sH}h${sM ? sM+'m' : ''}` : '—';
-    const deepStr  = dH ? `${dH}h${dM ? dM+'m' : ''}` : '—';
-    el.textContent = `${sleepStr} · 深層 ${deepStr}`;
+    const remStr   = rH ? `${rH}h${rM ? rM+'m' : ''}` : '—';
+    el.textContent = `${sleepStr} · REM ${remStr}`;
   } else if (id === 'factor') {
     const good = document.querySelectorAll('.factor-chip.selected-good').length;
     const bad  = document.querySelectorAll('.factor-chip.selected-bad').length;
@@ -2011,8 +2021,8 @@ function saveDraft() {
     sliderVals: { ...sliderVals },
     sleepH: document.getElementById('sleepHourH').value,
     sleepM: document.getElementById('sleepHourM').value,
-    deepH:  document.getElementById('deepSleepHourH').value,
-    deepM:  document.getElementById('deepSleepHourM').value,
+    remH:   document.getElementById('remHourH')?.value || '',
+    remM:   document.getElementById('remHourM')?.value || '',
     sleepQuality,
     medState: { ...medState },
     goodFactors, badFactors,
@@ -2038,10 +2048,12 @@ function loadDraft() {
   });
 
   // 還原睡眠輸入
-  document.getElementById('sleepHourH').value    = d.sleepH || '';
-  document.getElementById('sleepHourM').value    = d.sleepM || '';
-  document.getElementById('deepSleepHourH').value = d.deepH || '';
-  document.getElementById('deepSleepHourM').value = d.deepM || '';
+  document.getElementById('sleepHourH').value = d.sleepH || '';
+  document.getElementById('sleepHourM').value = d.sleepM || '';
+  const _remHEl = document.getElementById('remHourH');
+  const _remMEl = document.getElementById('remHourM');
+  if (_remHEl) _remHEl.value = d.remH || '';
+  if (_remMEl) _remMEl.value = d.remM || '';
   if (d.hrv) {
     const hrvMEl = document.getElementById('hrvMorningInput');
     if (hrvMEl) hrvMEl.value = d.hrv;
@@ -2121,8 +2133,8 @@ function todayDayKey() {
 function collectDailyData() {
   const sleepH = parseFloat(document.getElementById('sleepHourH').value) || 0;
   const sleepM = parseFloat(document.getElementById('sleepHourM').value) || 0;
-  const deepH  = parseFloat(document.getElementById('deepSleepHourH').value) || 0;
-  const deepM  = parseFloat(document.getElementById('deepSleepHourM').value) || 0;
+  const remH2  = parseFloat(document.getElementById('remHourH')?.value) || 0;
+  const remM2  = parseFloat(document.getElementById('remHourM')?.value) || 0;
 
   const goodFactors = [];
   const badFactors  = [];
@@ -2135,7 +2147,7 @@ function collectDailyData() {
     mood: { ...sliderVals },
     sleep: {
       totalHours: sleepH + sleepM / 60,
-      deepHours: deepH + deepM / 60,
+      remHours: remH2 + remM2 / 60,
       quality: sleepQuality
     },
     meds: { ...medState },
@@ -2164,11 +2176,13 @@ function loadSavedRecord() {
   // 還原睡眠時數
   if (d.sleep) {
     const th = d.sleep.totalHours || 0;
-    const dh = d.sleep.deepHours  || 0;
-    document.getElementById('sleepHourH').value     = Math.floor(th);
-    document.getElementById('sleepHourM').value     = Math.round((th % 1) * 60) || '';
-    document.getElementById('deepSleepHourH').value = Math.floor(dh);
-    document.getElementById('deepSleepHourM').value = Math.round((dh % 1) * 60) || '';
+    const rh = d.sleep.remHours   || 0;
+    document.getElementById('sleepHourH').value = Math.floor(th);
+    document.getElementById('sleepHourM').value = Math.round((th % 1) * 60) || '';
+    const _lrH = document.getElementById('remHourH');
+    const _lrM = document.getElementById('remHourM');
+    if (_lrH) _lrH.value = Math.floor(rh) || '';
+    if (_lrM) _lrM.value = Math.round((rh % 1) * 60) || '';
     sleepQuality = d.sleep.quality || 'ok';
     document.querySelectorAll('.sq-btn').forEach(btn => {
       btn.className = 'sq-btn';
@@ -2301,7 +2315,7 @@ function showToast(msg) {
 }
 
 /* ════ CHARTS ════ */
-let moodInst, medInst, sleepInst, deepSleepInst;
+let moodInst, medInst, sleepInst, remInst;
 function renderStatCards() {
   const now = new Date();
   function getRecords(startDaysAgo, endDaysAgo) {
@@ -2369,7 +2383,7 @@ function renderCharts() {
   const moodData      = new Array(14).fill(null);
   const medData       = new Array(14).fill(null);
   const sleepData     = new Array(14).fill(null);
-  const deepSleepData = new Array(14).fill(null);
+  const remData       = new Array(14).fill(null);
   const hrvData       = new Array(14).fill(null);
   for(let i = 13; i >= 0; i--) {
     const d = new Date(); d.setDate(d.getDate() - i);
@@ -2388,7 +2402,7 @@ function renderCharts() {
         if (rec.score   != null) moodData[idx]      = rec.score;
         if (rec.meds)            medData[idx]        = (rec.meds.ad||0) + (rec.meds.ax||0) + (rec.meds.sl||0);
         if (rec.sleep)           sleepData[idx]      = rec.sleep.totalHours || null;
-        if (rec.sleep)           deepSleepData[idx]  = rec.sleep.deepHours  || null;
+        if (rec.sleep)           remData[idx]        = rec.sleep.remHours   || null;
         if (rec.hrv    != null)  hrvData[idx]        = rec.hrv;
       } catch(e) {}
     }
@@ -2510,15 +2524,15 @@ function renderCharts() {
     }
   });
 
-  if(deepSleepInst) deepSleepInst.destroy();
-  deepSleepInst = new Chart(document.getElementById('deepSleepChart'), {
+  if(remInst) remInst.destroy();
+  remInst = new Chart(document.getElementById('remChart'), {
     type: 'bar',
     data: {
       labels,
       datasets: [{
-        data: deepSleepData,
-        backgroundColor: 'rgba(155,142,196,0.35)',
-        borderColor: '#9b8ec4',
+        data: remData,
+        backgroundColor: 'rgba(93,224,216,0.30)',
+        borderColor: '#5de0d8',
         borderWidth: 1,
         borderRadius: 5,
       }]
@@ -2526,8 +2540,8 @@ function renderCharts() {
     options: {
       responsive: true, maintainAspectRatio: false,
       plugins: { legend: { display: false } },
-      scales: { x: axisOpts, y: { ...axisOpts, min: 0, max: 6,
-        ticks: { ...axisOpts.ticks, stepSize: 1,
+      scales: { x: axisOpts, y: { ...axisOpts, min: 0, max: 4,
+        ticks: { ...axisOpts.ticks, stepSize: 0.5,
           callback: v => v + 'h' } } }
     }
   });
