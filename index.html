@@ -2943,9 +2943,15 @@ const fbDb   = firebase.firestore();
 // ── 登入 / 登出 ──
 function fbSignIn() {
   const provider = new firebase.auth.GoogleAuthProvider();
-  // 手機 Safari 封鎖 popup，統一改用 redirect
-  fbAuth.signInWithRedirect(provider).catch(() => {
-    document.getElementById('loginError').style.display = 'block';
+  // 用 popup（由使用者點擊觸發，Safari ITP 不會封鎖）
+  // 若 popup 被系統封鎖才 fallback 到 redirect
+  fbAuth.signInWithPopup(provider).catch(err => {
+    if (err.code === 'auth/popup-blocked' || err.code === 'auth/cancelled-popup-request') {
+      fbAuth.signInWithRedirect(provider);
+    } else if (err.code !== 'auth/popup-closed-by-user') {
+      console.warn('[Auth] signIn error:', err.code);
+      document.getElementById('loginError').style.display = 'block';
+    }
   });
 }
 
