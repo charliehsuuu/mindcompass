@@ -1061,19 +1061,7 @@
         <span class="final-score-val" id="finalScore">72</span>
       </div>
       <h2 id="heroTitle">今天狀態還不錯</h2>
-      <!-- 健康數據 mini row -->
-      <div id="healthStats" style="display:flex;gap:10px;margin:10px 0 4px;flex-wrap:wrap;">
-        <div class="health-stat-chip" id="chipHRV">
-          <span class="hsc-label">心率變異</span>
-          <span class="hsc-val" id="heroHRV">—</span>
-          <span class="hsc-unit">ms</span>
-        </div>
-        <div class="health-stat-chip" id="chipSteps">
-          <span class="hsc-label">今日步行</span>
-          <span class="hsc-val" id="heroSteps">—</span>
-          <span class="hsc-unit">步</span>
-        </div>
-      </div>
+
       <span class="mood-tag" id="heroTag">✦ 可以信任今天的判斷</span>
       <div class="trend-alert" id="trendAlert"></div>
     </div>
@@ -1125,14 +1113,6 @@
             <input type="number" inputmode="numeric" class="hrv-input" id="hrvMorningInput"
               min="0" max="200" placeholder="從健康 App 查看"
               oninput="updateHero(); saveDraft();" aria-label="晨間 HRV 數值（毫秒）">
-          </div>
-        </div>
-        <div style="margin-top:14px;">
-          <div style="font-size:13px;color:var(--muted);margin-bottom:6px;letter-spacing:0.5px">今日步行 (步) <span style="font-size:11px;opacity:0.6">· 從健康 App 查看</span></div>
-          <div style="display:flex;align-items:center;gap:8px">
-            <input type="number" inputmode="numeric" class="hrv-input" id="stepsInput"
-              min="0" max="99999" placeholder="從健康 App 查看"
-              oninput="updateHero(); saveDraft();" aria-label="今日步行數">
           </div>
         </div>
         <div style="display:flex;justify-content:flex-end;margin-top:14px;">
@@ -1735,13 +1715,6 @@ function updateHero() {
     tag.style.cssText = 'background:rgba(232,125,125,0.12);color:var(--danger)';
   }
 
-  // 同步健康數據 chip
-  const hrv   = parseFloat(document.getElementById('hrvMorningInput')?.value) || 0;
-  const steps = parseInt(document.getElementById('stepsInput')?.value)        || 0;
-  const hrvEl   = document.getElementById('heroHRV');
-  const stepsEl = document.getElementById('heroSteps');
-  if (hrvEl)   hrvEl.textContent   = hrv   > 0 ? hrv   : '—';
-  if (stepsEl) stepsEl.textContent = steps > 0 ? steps.toLocaleString() : '—';
 }
 
 /* ════ 歷史資料 & 趨勢計算 ════ */
@@ -2001,7 +1974,6 @@ function saveSection(id) {
     const morningData = {
       morningMood: morningMood,
       hrv: parseFloat(document.getElementById('hrvMorningInput')?.value) || null,
-      steps: parseInt(document.getElementById('stepsInput')?.value) || null,
       ts: Date.now()
     };
     localStorage.setItem(morningKey(), JSON.stringify(morningData));
@@ -2082,7 +2054,6 @@ function saveDraft() {
     morningMood: morningMood,
     hrvMorning: document.getElementById('hrvMorningInput')?.value || '',
     hrv:    document.getElementById('hrvMorningInput')?.value || '',
-    steps:  parseInt(document.getElementById('stepsInput')?.value) || null,
     sectionSaved: { ...sectionSaved }
   };
   localStorage.setItem(draftKey(), JSON.stringify(draft));
@@ -2111,11 +2082,7 @@ function loadDraft() {
     const hrvMEl = document.getElementById('hrvMorningInput');
     if (hrvMEl) hrvMEl.value = d.hrv;
   }
-  if (d.steps) {
-    const stepsEl = document.getElementById('stepsInput');
-    if (stepsEl) stepsEl.value = d.steps;
-  }
-  if (d.morningMood != null) {
+if (d.morningMood != null) {
     morningMood = d.morningMood;
     document.getElementById('val-morning').textContent = morningMood;
     const morningLabels = ['', '很差', '不好', '普通', '不錯', '很好'];
@@ -2895,15 +2862,8 @@ if (localStorage.getItem(todayKey())) {
       if (dmEl) dmEl.value = dm || '';
     }
 
-    // 步數
-    const steps = parseInt(params.get('steps'));
-    if (!isNaN(steps) && steps > 0) {
-      const el = document.getElementById('stepsInput');
-      if (el) { el.value = steps; }
-    }
-
     // 有任何參數填入就更新 Hero 與摘要
-    if (!isNaN(hrv) || !isNaN(sleep) || !isNaN(deep) || !isNaN(steps)) {
+    if (!isNaN(hrv) || !isNaN(sleep) || !isNaN(deep)) {
       updateHero();
       updateSummary('sleep');
       saveDraft();
