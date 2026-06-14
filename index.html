@@ -2895,8 +2895,15 @@ if (localStorage.getItem(todayKey())) {
       if (dmEl) dmEl.value = dm || '';
     }
 
+    // 步數
+    const steps = parseInt(params.get('steps'));
+    if (!isNaN(steps) && steps > 0) {
+      const el = document.getElementById('stepsInput');
+      if (el) { el.value = steps; }
+    }
+
     // 有任何參數填入就更新 Hero 與摘要
-    if (!isNaN(hrv) || !isNaN(sleep) || !isNaN(deep)) {
+    if (!isNaN(hrv) || !isNaN(sleep) || !isNaN(deep) || !isNaN(steps)) {
       updateHero();
       updateSummary('sleep');
       saveDraft();
