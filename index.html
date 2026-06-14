@@ -770,6 +770,33 @@
   .hrv-input:focus { border-color: #e8b86d; box-shadow: 0 0 0 2px rgba(232,184,109,0.18); }
   .hrv-input::placeholder { font-size: 11px; font-family: 'DM Sans', sans-serif; color: var(--muted); opacity: 0.6; letter-spacing: 0.3px; }
 
+  /* ── Health Stat Chips ── */
+  .health-stat-chip {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 4px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 10px;
+    padding: 6px 12px;
+  }
+  .hsc-label {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.4px;
+    margin-right: 2px;
+  }
+  .hsc-val {
+    font-size: 20px;
+    font-family: 'DM Serif Display', serif;
+    color: var(--text);
+    line-height: 1;
+  }
+  .hsc-unit {
+    font-size: 11px;
+    color: var(--muted);
+  }
+
   /* ── Trend Alert ── */
   .trend-alert {
     display: none;
@@ -1034,7 +1061,19 @@
         <span class="final-score-val" id="finalScore">72</span>
       </div>
       <h2 id="heroTitle">今天狀態還不錯</h2>
-      <p id="heroDesc">情緒指數在穩定區間。這種狀態下的判斷比較客觀，如果有重要決定，現在是適合思考的時機。</p>
+      <!-- 健康數據 mini row -->
+      <div id="healthStats" style="display:flex;gap:10px;margin:10px 0 4px;flex-wrap:wrap;">
+        <div class="health-stat-chip" id="chipHRV">
+          <span class="hsc-label">心率變異</span>
+          <span class="hsc-val" id="heroHRV">—</span>
+          <span class="hsc-unit">ms</span>
+        </div>
+        <div class="health-stat-chip" id="chipSteps">
+          <span class="hsc-label">今日步行</span>
+          <span class="hsc-val" id="heroSteps">—</span>
+          <span class="hsc-unit">步</span>
+        </div>
+      </div>
       <span class="mood-tag" id="heroTag">✦ 可以信任今天的判斷</span>
       <div class="trend-alert" id="trendAlert"></div>
     </div>
@@ -1086,6 +1125,14 @@
             <input type="number" inputmode="numeric" class="hrv-input" id="hrvMorningInput"
               min="0" max="200" placeholder="從健康 App 查看"
               oninput="updateHero(); saveDraft();" aria-label="晨間 HRV 數值（毫秒）">
+          </div>
+        </div>
+        <div style="margin-top:14px;">
+          <div style="font-size:13px;color:var(--muted);margin-bottom:6px;letter-spacing:0.5px">今日步行 (步) <span style="font-size:11px;opacity:0.6">· 從健康 App 查看</span></div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <input type="number" inputmode="numeric" class="hrv-input" id="stepsInput"
+              min="0" max="99999" placeholder="從健康 App 查看"
+              oninput="updateHero(); saveDraft();" aria-label="今日步行數">
           </div>
         </div>
         <div style="display:flex;justify-content:flex-end;margin-top:14px;">
@@ -1671,26 +1718,30 @@ function updateHero() {
   document.getElementById('finalScore').textContent = finalScore;
 
   const title = document.getElementById('heroTitle');
-  const desc  = document.getElementById('heroDesc');
   const tag   = document.getElementById('heroTag');
 
-  // Hero 標題/描述依「最終分數」判斷
+  // Hero 標題依「最終分數」判斷（移除 desc 文字，改顯示健康數據）
   if(finalScore >= 65) {
     title.textContent = '今天狀態還不錯';
-    desc.textContent  = '情緒指數在穩定區間。這種狀態下的判斷比較客觀，如果有重要決定，現在是適合思考的時機。';
     tag.textContent   = '✦ 可以信任今天的判斷';
     tag.style.cssText = 'background:rgba(126,200,160,0.12);color:var(--good)';
   } else if(finalScore >= 40) {
     title.textContent = '今天狀態普通，留意自己';
-    desc.textContent  = '指數在中間地帶。重大決定建議先暫緩，先把自己照顧好，等狀態回升再說。';
     tag.textContent   = '⚠ 重大決定先緩一緩';
     tag.style.cssText = 'background:rgba(232,184,109,0.12);color:var(--warn)';
   } else {
     title.textContent = '今天狀態需要特別關注';
-    desc.textContent  = '情緒指數偏低。這時候的感受可能比實際更負面，你的判斷力暫時在低谷，請先善待自己。';
     tag.textContent   = '🛑 今天不適合做重要決定';
     tag.style.cssText = 'background:rgba(232,125,125,0.12);color:var(--danger)';
   }
+
+  // 同步健康數據 chip
+  const hrv   = parseFloat(document.getElementById('hrvMorningInput')?.value) || 0;
+  const steps = parseInt(document.getElementById('stepsInput')?.value)        || 0;
+  const hrvEl   = document.getElementById('heroHRV');
+  const stepsEl = document.getElementById('heroSteps');
+  if (hrvEl)   hrvEl.textContent   = hrv   > 0 ? hrv   : '—';
+  if (stepsEl) stepsEl.textContent = steps > 0 ? steps.toLocaleString() : '—';
 }
 
 /* ════ 歷史資料 & 趨勢計算 ════ */
@@ -1950,6 +2001,7 @@ function saveSection(id) {
     const morningData = {
       morningMood: morningMood,
       hrv: parseFloat(document.getElementById('hrvMorningInput')?.value) || null,
+      steps: parseInt(document.getElementById('stepsInput')?.value) || null,
       ts: Date.now()
     };
     localStorage.setItem(morningKey(), JSON.stringify(morningData));
@@ -2030,6 +2082,7 @@ function saveDraft() {
     morningMood: morningMood,
     hrvMorning: document.getElementById('hrvMorningInput')?.value || '',
     hrv:    document.getElementById('hrvMorningInput')?.value || '',
+    steps:  parseInt(document.getElementById('stepsInput')?.value) || null,
     sectionSaved: { ...sectionSaved }
   };
   localStorage.setItem(draftKey(), JSON.stringify(draft));
@@ -2057,6 +2110,10 @@ function loadDraft() {
   if (d.hrv) {
     const hrvMEl = document.getElementById('hrvMorningInput');
     if (hrvMEl) hrvMEl.value = d.hrv;
+  }
+  if (d.steps) {
+    const stepsEl = document.getElementById('stepsInput');
+    if (stepsEl) stepsEl.value = d.steps;
   }
   if (d.morningMood != null) {
     morningMood = d.morningMood;
@@ -2152,6 +2209,7 @@ function collectDailyData() {
     },
     meds: { ...medState },
     hrv: parseFloat(document.getElementById('hrvMorningInput')?.value) || null,
+    steps: parseInt(document.getElementById('stepsInput')?.value) || null,
     factors: { good: goodFactors, bad: badFactors },
     note: document.getElementById('noteInput').value || '',
     morningMood: morningMood
@@ -2202,10 +2260,14 @@ function loadSavedRecord() {
     });
   }
 
-  // 還原 HRV
+  // 還原 HRV & 步數
   if (d.hrv != null) {
     const hrvMEl = document.getElementById('hrvMorningInput');
     if (hrvMEl) hrvMEl.value = d.hrv;
+  }
+  if (d.steps != null) {
+    const stepsEl = document.getElementById('stepsInput');
+    if (stepsEl) stepsEl.value = d.steps;
   }
 
   // 還原影響因素
