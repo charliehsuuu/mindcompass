@@ -1313,7 +1313,15 @@
         </div>
       </div>
       <div class="section-body" id="body-factor">
-      <div style="font-size:16px;color:var(--good);margin-bottom:10px">✦ 正面因素（點選已發生的）</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:10px;line-height:1.5;">點選今天 / 昨晚發生的項目</div>
+      <div style="font-size:15px;color:var(--factor-dark);margin:4px 0 8px;letter-spacing:0.3px;">🌙 睡前行為 <span style="font-size:11px;opacity:0.6;color:var(--muted)">· 影響當晚睡眠</span></div>
+      <div class="factor-grid">
+        <button class="factor-chip" onclick="toggleFactor(this,'bad')">☕ 晚喝咖啡</button>
+        <button class="factor-chip" onclick="toggleFactor(this,'bad')">📱 睡前滑手機</button>
+        <button class="factor-chip" onclick="toggleFactor(this,'bad')">🥃 飲酒</button>
+      </div>
+      <div style="font-size:15px;color:var(--factor-dark);margin:16px 0 8px;letter-spacing:0.3px;">☀️ 白天事件</div>
+      <div style="font-size:13px;color:var(--good);margin-bottom:8px">✦ 正面</div>
       <div class="factor-grid">
         <button class="factor-chip" onclick="toggleFactor(this,'good')">🏃 有運動</button>
         <button class="factor-chip" onclick="toggleFactor(this,'good')">🌤️ 曬到太陽</button>
@@ -1322,25 +1330,24 @@
         <button class="factor-chip" onclick="toggleFactor(this,'good')">🎵 享受音樂</button>
         <button class="factor-chip" onclick="toggleFactor(this,'good')">🍳 好好吃飯</button>
         <button class="factor-chip" onclick="toggleFactor(this,'good')">🌿 靜心片刻</button>
-        <button class="factor-chip" onclick="toggleFactor(this,'good')">🌙 按時就寢</button>
         <button class="factor-chip" onclick="toggleFactor(this,'good')">🚶 步行5000步</button>
       </div>
-      <div style="font-size:16px;color:var(--danger);margin:14px 0 10px">✦ 負面因素（點選今天遇到的）</div>
+      <div style="font-size:13px;color:var(--danger);margin:12px 0 8px">✦ 負面</div>
       <div class="factor-grid">
         <button class="factor-chip" onclick="toggleFactor(this,'bad')">🤕 偏頭痛</button>
-        <button class="factor-chip" onclick="toggleFactor(this,'bad')">☕ 晚喝咖啡</button>
-        <button class="factor-chip" onclick="toggleFactor(this,'bad')">📱 睡前滑手機</button>
-        <button class="factor-chip" onclick="toggleFactor(this,'bad')">🥃 飲酒</button>
         <button class="factor-chip" onclick="toggleFactor(this,'bad')">😤 人際衝突</button>
         <button class="factor-chip" onclick="toggleFactor(this,'bad')">😫 高度壓力</button>
-        <button class="factor-chip" onclick="toggleFactor(this,'bad')">🌙 太晚才睡</button>
-        <button class="factor-chip" onclick="toggleFactor(this,'bad')">💭 反芻思考</button>
-        <button class="factor-chip" onclick="toggleFactor(this,'bad')">😔 對自己失望</button>
         <button class="factor-chip" onclick="toggleFactor(this,'bad')">🍔 飲食不規律</button>
         <button class="factor-chip" onclick="toggleFactor(this,'bad')">📋 待辦事項堆積</button>
+        <button class="factor-chip" onclick="toggleFactor(this,'bad')">💼 工作出狀況</button>
+        <button class="factor-chip" onclick="toggleFactor(this,'bad')">💔 感情負能量</button>
+      </div>
+      <div style="font-size:15px;color:var(--factor-dark);margin:16px 0 8px;letter-spacing:0.3px;">💭 內在狀態 <span style="font-size:11px;opacity:0.6;color:var(--muted)">· 內心感受，非外部事件</span></div>
+      <div class="factor-grid">
+        <button class="factor-chip" onclick="toggleFactor(this,'bad')">💭 反芻思考</button>
+        <button class="factor-chip" onclick="toggleFactor(this,'bad')">😔 對自己失望</button>
         <button class="factor-chip" onclick="toggleFactor(this,'bad')">🤯 過度完美主義</button>
         <button class="factor-chip" onclick="toggleFactor(this,'bad')">😶 感到孤立</button>
-        <button class="factor-chip" onclick="toggleFactor(this,'bad')">💼 工作出狀況</button>
       </div>
       <div style="display:flex;justify-content:flex-end;margin-top:14px;">
         <button id="section-btn-factor" class="section-save-btn" onclick="handleSectionBtn(event,'factor')">儲存</button>
