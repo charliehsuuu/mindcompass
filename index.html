@@ -1210,6 +1210,15 @@
         <div style="display:flex;flex-direction:column;gap:12px">
           <div style="display:flex;flex-direction:column;gap:10px">
             <div>
+              <div style="font-size:13px;color:var(--muted);margin-bottom:6px;letter-spacing:0.5px">就寢時間</div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <input type="time" class="med-time-input" id="bedtimeInput"
+                  style="font-size:20px;padding:8px 12px"
+                  oninput="updateSummary('sleep'); saveDraft();"
+                  aria-label="就寢時間">
+              </div>
+            </div>
+            <div>
               <div style="font-size:13px;color:var(--muted);margin-bottom:6px;letter-spacing:0.5px">總睡眠時間</div>
               <div style="display:flex;align-items:center;gap:8px">
                 <input type="number" inputmode="numeric" class="sleep-hour-input" id="sleepHourH"
@@ -1242,9 +1251,9 @@
           <div>
             <div style="font-size:13px;color:var(--muted);margin-bottom:8px;letter-spacing:0.5px">自我評估</div>
             <div class="sleep-quality">
-              <button class="sq-btn" onclick="setSleepQ('good',this)">😴 沉穩</button>
+              <button class="sq-btn" onclick="setSleepQ('good',this)">😴 飽足</button>
               <button class="sq-btn active-ok" onclick="setSleepQ('ok',this)">💤 普通</button>
-              <button class="sq-btn" onclick="setSleepQ('bad',this)">😵 淺眠</button>
+              <button class="sq-btn" onclick="setSleepQ('bad',this)">😵 沒睡飽</button>
             </div>
           </div>
         </div>
@@ -1514,6 +1523,14 @@ function getYesterdayRecord() {
   try { return JSON.parse(raw); } catch(e) { return null; }
 }
 
+// 由就寢時間推導是否 11 點前睡。18:00–22:59 視為「11 點前」。
+function deriveBefore11(bt) {
+  if (!bt) return null;
+  const h = parseInt(bt.split(':')[0], 10);
+  if (isNaN(h)) return null;
+  return (h >= 18 && h < 23);
+}
+
 function calcSleepScore() {
   const sleepH = parseFloat(document.getElementById('sleepHourH').value) || 0;
   const sleepM = parseFloat(document.getElementById('sleepHourM').value) || 0;
@@ -1527,14 +1544,6 @@ function calcSleepScore() {
   else if (h > 10 && h <= 11) score = 60;
   else if (h >= 4 && h < 5)   score = 30;
   else                         score = 10;
-
-  // REM 修正：影響開場分
-  const remH = (parseFloat(document.getElementById('remHourH')?.value) || 0)
-             + (parseFloat(document.getElementById('remHourM')?.value) || 0) / 60;
-  const remMin = remH * 60;
-  if (remMin >= 100)              score = Math.min(100, score + 8);
-  else if (remMin >= 60)          score = Math.min(100, score + 3);
-  else if (remMin > 0 && remMin < 45) score = Math.max(0,   score - 8);
 
   return score;
 }
@@ -1583,14 +1592,6 @@ function calcScore() {
   // 睡眠品質修正
   if (sleepQuality === 'good') sleepScore = Math.min(100, sleepScore + 5);
   if (sleepQuality === 'bad')  sleepScore = Math.max(0,   sleepScore - 8);
-
-  // REM 修正（快速動眼期）
-  const remH = (parseFloat(document.getElementById('remHourH')?.value) || 0)
-             + (parseFloat(document.getElementById('remHourM')?.value) || 0) / 60;
-  const remMin = remH * 60;
-  if (remMin >= 100)              sleepScore = Math.min(100, sleepScore + 8);
-  else if (remMin >= 60)          sleepScore = Math.min(100, sleepScore + 3);
-  else if (remMin > 0 && remMin < 45) sleepScore = Math.max(0,   sleepScore - 8);
 
   // ── 因素分（0-100）：正面 / 負面各自貢獻一半 ──
   // 全選正面 → 100，全無 → 50，全選負面 → 0
@@ -1920,7 +1921,9 @@ function updateSummary(id) {
     const rM = document.getElementById('remHourM')?.value || '';
     const sleepStr = sH ? `${sH}h${sM ? sM+'m' : ''}` : '—';
     const remStr   = rH ? `${rH}h${rM ? rM+'m' : ''}` : '—';
-    el.textContent = `${sleepStr} · REM ${remStr}`;
+    const bt = document.getElementById('bedtimeInput')?.value || '';
+    const btStr = bt ? `就寢 ${bt}` : '';
+    el.textContent = [btStr, `${sleepStr} · REM ${remStr}`].filter(Boolean).join(' · ');
   } else if (id === 'factor') {
     const good = document.querySelectorAll('.factor-chip.selected-good').length;
     const bad  = document.querySelectorAll('.factor-chip.selected-bad').length;
@@ -2054,6 +2057,7 @@ function saveDraft() {
     morningMood: morningMood,
     hrvMorning: document.getElementById('hrvMorningInput')?.value || '',
     hrv:    document.getElementById('hrvMorningInput')?.value || '',
+    bedtime: document.getElementById('bedtimeInput')?.value || '',
     sectionSaved: { ...sectionSaved }
   };
   localStorage.setItem(draftKey(), JSON.stringify(draft));
@@ -2078,6 +2082,8 @@ function loadDraft() {
   const _remMEl = document.getElementById('remHourM');
   if (_remHEl) _remHEl.value = d.remH || '';
   if (_remMEl) _remMEl.value = d.remM || '';
+  const _btEl = document.getElementById('bedtimeInput');
+  if (_btEl && d.bedtime) _btEl.value = d.bedtime;
   if (d.hrv) {
     const hrvMEl = document.getElementById('hrvMorningInput');
     if (hrvMEl) hrvMEl.value = d.hrv;
@@ -2097,9 +2103,9 @@ if (d.morningMood != null) {
   sleepQuality = d.sleepQuality || 'ok';
   document.querySelectorAll('.sq-btn').forEach(btn => {
     btn.className = 'sq-btn';
-    if ((d.sleepQuality === 'good' && btn.textContent.includes('沉穩')) ||
+    if ((d.sleepQuality === 'good' && btn.textContent.includes('飽足')) ||
         (d.sleepQuality === 'ok'   && btn.textContent.includes('普通')) ||
-        (d.sleepQuality === 'bad'  && btn.textContent.includes('淺眠'))) {
+        (d.sleepQuality === 'bad'  && btn.textContent.includes('沒睡飽'))) {
       btn.classList.add('active-' + d.sleepQuality);
     }
   });
@@ -2159,6 +2165,7 @@ function collectDailyData() {
   const sleepM = parseFloat(document.getElementById('sleepHourM').value) || 0;
   const remH2  = parseFloat(document.getElementById('remHourH')?.value) || 0;
   const remM2  = parseFloat(document.getElementById('remHourM')?.value) || 0;
+  const bedtimeStr = document.getElementById('bedtimeInput')?.value || '';
 
   const goodFactors = [];
   const badFactors  = [];
@@ -2172,7 +2179,9 @@ function collectDailyData() {
     sleep: {
       totalHours: sleepH + sleepM / 60,
       remHours: remH2 + remM2 / 60,
-      quality: sleepQuality
+      quality: sleepQuality,
+      bedtime: bedtimeStr || null,
+      before11: deriveBefore11(bedtimeStr)
     },
     meds: { ...medState },
     hrv: parseFloat(document.getElementById('hrvMorningInput')?.value) || null,
@@ -2211,11 +2220,15 @@ function loadSavedRecord() {
     sleepQuality = d.sleep.quality || 'ok';
     document.querySelectorAll('.sq-btn').forEach(btn => {
       btn.className = 'sq-btn';
-      if ((sleepQuality === 'good' && btn.textContent.includes('沉穩')) ||
+      if ((sleepQuality === 'good' && btn.textContent.includes('飽足')) ||
           (sleepQuality === 'ok'   && btn.textContent.includes('普通')) ||
-          (sleepQuality === 'bad'  && btn.textContent.includes('淺眠')))
+          (sleepQuality === 'bad'  && btn.textContent.includes('沒睡飽')))
         btn.classList.add('active-' + sleepQuality);
     });
+    if (d.sleep.bedtime) {
+      const _btEl = document.getElementById('bedtimeInput');
+      if (_btEl) _btEl.value = d.sleep.bedtime;
+    }
   }
 
   // 還原藥量
