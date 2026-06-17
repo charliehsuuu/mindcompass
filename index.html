@@ -1007,7 +1007,7 @@
   <!-- ════ PANEL: 今日記錄 ════ -->
   <section class="panel active" id="panel-record" aria-label="今日記錄" role="tabpanel">
 
-  <section class="mood-hero" id="moodHero" aria-label="情緒指數儀表板">
+  <section class="mood-hero" id="moodHero" aria-label="每日狀態儀表板">
     <div class="mood-rings">
       <!-- 今日狀態圓圈 -->
       <div class="mood-ring-wrap">
@@ -1057,7 +1057,7 @@
 
     <div class="mood-hero-text">
       <div class="final-score-row">
-        <span class="final-score-label">最終情緒指數</span>
+        <span class="final-score-label">最終每日狀態</span>
         <span class="final-score-val" id="finalScore">72</span>
       </div>
       <h2 id="heroTitle">今天狀態還不錯</h2>
@@ -1344,10 +1344,10 @@
       </div>
       <div style="font-size:15px;color:var(--factor-dark);margin:16px 0 8px;letter-spacing:0.3px;">💭 內在狀態 <span style="font-size:11px;opacity:0.6;color:var(--muted)">· 內心感受，非外部事件</span></div>
       <div class="factor-grid">
-        <button class="factor-chip" onclick="toggleFactor(this,'bad')">💭 反芻思考</button>
-        <button class="factor-chip" onclick="toggleFactor(this,'bad')">😔 對自己失望</button>
-        <button class="factor-chip" onclick="toggleFactor(this,'bad')">🤯 過度完美主義</button>
-        <button class="factor-chip" onclick="toggleFactor(this,'bad')">😶 感到孤立</button>
+        <button class="factor-chip inner-state" onclick="toggleFactor(this,'bad')">💭 反芻思考</button>
+        <button class="factor-chip inner-state" onclick="toggleFactor(this,'bad')">😔 對自己失望</button>
+        <button class="factor-chip inner-state" onclick="toggleFactor(this,'bad')">🤯 過度完美主義</button>
+        <button class="factor-chip inner-state" onclick="toggleFactor(this,'bad')">😶 感到孤立</button>
       </div>
       <div style="display:flex;justify-content:flex-end;margin-top:14px;">
         <button id="section-btn-factor" class="section-save-btn" onclick="handleSectionBtn(event,'factor')">儲存</button>
@@ -1391,7 +1391,7 @@
     </div>
 
     <div class="card" style="margin-bottom:16px">
-      <h3>情緒指數趨勢（近 14 天）</h3>
+      <h3>每日狀態趨勢（近 14 天）</h3>
       <div class="chart-wrap">
         <canvas id="moodChart"></canvas>
       </div>
@@ -1602,10 +1602,10 @@ function calcScore() {
 
   // ── 因素分（0-100）：正面 / 負面各自貢獻一半 ──
   // 全選正面 → 100，全無 → 50，全選負面 → 0
-  const goodCount = document.querySelectorAll('.factor-chip.selected-good').length;
-  const badCount  = document.querySelectorAll('.factor-chip.selected-bad').length;
-  const totalGoodChips = document.querySelectorAll('.factor-chip[onclick*="good"]').length || 11;
-  const totalBadChips  = document.querySelectorAll('.factor-chip[onclick*="bad"]').length  || 13;
+  const goodCount = document.querySelectorAll('.factor-chip.selected-good:not(.inner-state)').length;
+  const badCount  = document.querySelectorAll('.factor-chip.selected-bad:not(.inner-state)').length;
+  const totalGoodChips = document.querySelectorAll('.factor-chip[onclick*="good"]:not(.inner-state)').length || 8;
+  const totalBadChips  = document.querySelectorAll('.factor-chip[onclick*="bad"]:not(.inner-state)').length  || 7;
   const factorScore = (totalGoodChips > 0 && totalBadChips > 0)
     ? ((goodCount / totalGoodChips) * 100 + (1 - badCount / totalBadChips) * 100) / 2
     : 50;
@@ -1702,7 +1702,7 @@ function updateHero() {
     }
   }
 
-  // 最終情緒指數
+  // 最終每日狀態
   document.getElementById('finalScore').textContent = finalScore;
 
   const title = document.getElementById('heroTitle');
