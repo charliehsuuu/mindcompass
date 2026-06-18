@@ -1,0 +1,11 @@
+# secrets
+.env
+
+# OS
+.DS_Store
+
+# backups
+*.bak
+*.bak2
+*.bak3
+*.safe
