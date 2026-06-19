@@ -1137,6 +1137,7 @@
           </div>
         </div>
         <div class="section-body" id="body-mood">
+        <div id="earlyHint-mood" style="display:none;font-size:13px;color:var(--warn);background:rgba(232,184,109,0.08);border:1px solid var(--border);border-radius:10px;padding:8px 12px;margin-bottom:12px;line-height:1.6;">現在還早，晚點若有變化記得回來更新</div>
         <div class="mood-steppers">
           <div class="mood-row">
             <label>😌 平靜感</label>
@@ -1313,6 +1314,7 @@
         </div>
       </div>
       <div class="section-body" id="body-factor">
+      <div id="earlyHint-factor" style="display:none;font-size:13px;color:var(--warn);background:rgba(232,184,109,0.08);border:1px solid var(--border);border-radius:10px;padding:8px 12px;margin-bottom:12px;line-height:1.6;">現在還早，晚點若有變化記得回來更新</div>
       <div style="font-size:13px;color:var(--muted);margin-bottom:10px;line-height:1.5;">點選今天 / 昨晚發生的項目</div>
       <div style="font-size:15px;color:var(--factor-dark);margin:4px 0 8px;letter-spacing:0.3px;">🌙 睡前行為 <span style="font-size:11px;opacity:0.6;color:var(--muted)">· 影響當晚睡眠</span></div>
       <div class="factor-grid">
@@ -1425,9 +1427,15 @@
     </div>
     <!-- 因素影響力分析卡片（唯讀：只讀歷史記錄計算顯示，不改任何記錄或評分） -->
     <div class="card" id="card-factor-impact" style="margin-bottom:16px">
-      <h3>因素影響力 · 哪些事常伴隨你的好/壞狀態</h3>
+      <h3>因素 → 心情（當日）· 哪些事常伴隨你的好/壞狀態</h3>
       <div id="factorImpactBody"></div>
       <p style="font-size:14px;color:var(--muted);opacity:0.85;margin-top:14px;line-height:1.7;">這是觀察到的關聯，不代表因果。資料越多越準確。</p>
+    </div>
+    <!-- 睡眠影響因素（隔日）分析卡片（唯讀：factors(D)→sleepScore(D+1)，+1 配對；before11 同筆） -->
+    <div class="card" id="card-sleep-impact" style="margin-bottom:16px">
+      <h3>因素 → 睡眠（隔日）· 哪些事常伴隨你的好/壞睡眠</h3>
+      <div id="sleepImpactBody"></div>
+      <p style="font-size:14px;color:var(--muted);opacity:0.85;margin-top:14px;line-height:1.7;">隔天睡眠分的關聯觀察，不代表因果。資料越多越準確。</p>
     </div>
   </section>
 
@@ -1496,7 +1504,7 @@ function switchTab(name, btn) {
   // 趨勢總覽、歷史日誌隱藏 Hero
   // Hero 在 panel-record 內，Tab 切換自動控制顯示
 
-  if(name === 'overview') { renderCharts(); renderStatCards(); renderFactorImpact(); }
+  if(name === 'overview') { renderCharts(); renderStatCards(); renderFactorImpact(); renderSleepImpact(); }
   if(name === 'log') { renderLog(); calInit(); }
 }
 
@@ -1913,6 +1921,11 @@ function toggleSection(id) {
   const summary = document.getElementById('summary-' + id);
   const isCollapsed = body.classList.toggle('collapsed');
   toggle.classList.toggle('collapsed', isCollapsed);
+  // earlyEntry 軟提醒：晚間段（心情/因素）在 EARLY_ENTRY_HOUR 前展開時顯示輕提示
+  if (id === 'mood' || id === 'factor') {
+    const _eh = document.getElementById('earlyHint-' + id);
+    if (_eh) _eh.style.display = (!isCollapsed && new Date().getHours() < EARLY_ENTRY_HOUR) ? 'block' : 'none';
+  }
   if (isCollapsed) {
     summary.classList.add('show');
     updateSummary(id);
@@ -2202,7 +2215,9 @@ function collectDailyData() {
     steps: parseInt(document.getElementById('stepsInput')?.value) || null,
     factors: { good: goodFactors, bad: badFactors },
     note: document.getElementById('noteInput').value || '',
-    morningMood: morningMood
+    morningMood: morningMood,
+    // earlyEntry：晚間段在天還沒過完時就填（每次存檔重算覆蓋，非黏著）
+    earlyEntry: (new Date().getHours() < EARLY_ENTRY_HOUR)
   };
 }
 
@@ -2320,6 +2335,10 @@ function lockRecordForm() {
 }
 
 function saveRecord() {
+  // earlyEntry 軟提醒：天還沒過完就存 → 跳一次 confirm（永不阻止儲存，只提醒）
+  if (new Date().getHours() < EARLY_ENTRY_HOUR) {
+    confirm('今天還沒過完，確定現在填？（晚點可回來更新）');
+  }
   // 儲存完整資料
   const data = collectDailyData();
   localStorage.setItem(todayDayKey(), JSON.stringify(data));
@@ -2438,7 +2457,41 @@ function renderStatCards() {
 // 因素影響力分析（唯讀功能：只讀 localStorage 歷史記錄、計算、顯示）
 // 不修改任何記錄、不改評分公式、不動現有邏輯
 // ════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════
+// Group B / earlyEntry 可調門檻常數
+// ════════════════════════════════════════════════════════════
+const GROUPB_MIN_FACTOR_DAYS = 5;   // 某 factor 的 present 天數門檻
+const GROUPB_MIN_PAIRS       = 14;  // 總有效配對門檻（未滿整區顯示資料累積中）
+const EARLY_ENTRY_HOUR       = 18;  // earlyEntry 判定門檻（晚間段早填）
+
+// 純函式：吃 stored 的 sleep 物件回傳睡眠分 0–100
+// 邏輯與 calcScore() 內睡眠分一致（時數分段 + 品質修正，不含 REM）
+function sleepScoreFromData(sleepObj) {
+  if (!sleepObj || typeof sleepObj !== 'object') return null;
+  const h = Number(sleepObj.totalHours);
+  if (!isFinite(h)) return null;
+  let score;
+  if (!h || h <= 0)            score = 50;
+  else if (h >= 7 && h <= 9)   score = 100;
+  else if (h >= 6 && h < 7)    score = 80;
+  else if (h > 9 && h <= 10)   score = 80;
+  else if (h >= 5 && h < 6)    score = 55;
+  else if (h > 10 && h <= 11)  score = 60;
+  else if (h >= 4 && h < 5)    score = 30;
+  else                          score = 10;
+  if (sleepObj.quality === 'good') score = Math.min(100, score + 5);
+  if (sleepObj.quality === 'bad')  score = Math.max(0,   score - 8);
+  return score;
+}
+
 const INNER_STATE_FACTORS = ['💭 反芻思考', '😔 對自己失望', '🤯 過度完美主義', '😶 感到孤立'];
+
+// 退役因素（06-17 已移除 chip，但舊記錄仍可能殘留字串）
+// 用 substring 比對，不受 emoji 前綴影響
+const RETIRED_FACTORS = ['太晚才睡', '按時就寢'];
+function isRetiredFactor(f) {
+  return RETIRED_FACTORS.some(r => f.indexOf(r) !== -1);
+}
 
 // 從一筆記錄的 mood 物件重算 moodScore（0–100），公式與 calcScore() 內 moodScore 完全一致
 function moodScoreFromMood(m) {
@@ -2485,6 +2538,7 @@ function calcFactorImpact() {
   // 3) 每個因素：有勾 vs 沒勾 的 moodScore 平均，差值 = 有 − 沒有
   const results = [];
   allFactors.forEach(f => {
+    if (isRetiredFactor(f)) return; // 退役因素：顯示層過濾，不動原始資料
     const withArr = [], withoutArr = [];
     records.forEach(r => { (r.factors.has(f) ? withArr : withoutArr).push(r.moodScore); });
     if (withArr.length < 5) return;      // 門檻：有勾天數 < 5 → 資料累積中，不排名
@@ -2543,6 +2597,142 @@ function renderFactorImpact() {
   body.innerHTML =
     section('最常伴隨低落的因素', data.negatives, 'neg') +
     section('最常伴隨好狀態的因素', data.positives, 'pos');
+}
+
+// ════════════════════════════════════════════════════════════
+// Group B：因素 → 隔日睡眠分析（唯讀）
+// factors(D) → sleepScore(D+1)，+1 配對；before11(D) → sleepScore(D)，+0 同筆
+// 只用 mc_saved 為 true 的真記錄，禁止補值；不依 earlyEntry 過濾
+// ════════════════════════════════════════════════════════════
+function calcSleepImpact() {
+  // 1) 蒐集所有 mc_saved 為 true 的真記錄，依日期建索引
+  const saved = new Map(); // key 'Y-M-D' → record
+  const gbKey = (d) => d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (!key || key.indexOf('mc_day_') !== 0) continue;
+    const datePart = key.slice(7); // 'Y_M_D'
+    if (!localStorage.getItem('mc_saved_' + datePart)) continue; // 僅真記錄（mc_saved）
+    let rec;
+    try { rec = JSON.parse(localStorage.getItem(key)); } catch (e) { continue; }
+    if (!rec || typeof rec !== 'object') continue;
+    const p = datePart.split('_').map(Number);
+    if (p.length !== 3 || p.some(n => !isFinite(n))) continue;
+    saved.set(gbKey(new Date(p[0], p[1] - 1, p[2])), rec);
+  }
+
+  // 2) 主體配對：factors(D) → sleepScore(D+1)，兩端皆須真記錄
+  const validPairs = [];
+  saved.forEach((recD, kD) => {
+    const p = kD.split('-').map(Number);
+    const recNext = saved.get(gbKey(new Date(p[0], p[1] - 1, p[2] + 1)));
+    if (!recNext) return;                       // D+1 缺記錄 → 丟棄此配對
+    const sNext = sleepScoreFromData(recNext.sleep);
+    if (sNext == null) return;
+    const set = new Set();
+    if (recD.factors) {
+      (Array.isArray(recD.factors.good) ? recD.factors.good : []).forEach(f => { if (typeof f === 'string' && f.trim()) set.add(f.trim()); });
+      (Array.isArray(recD.factors.bad)  ? recD.factors.bad  : []).forEach(f => { if (typeof f === 'string' && f.trim()) set.add(f.trim()); });
+    }
+    validPairs.push({ factors: set, sleepNext: sNext });
+  });
+
+  // 3) before11(D) → sleepScore(D)，+0 同筆，單獨計算（不混入排行）
+  const b11p = [], b11a = [];
+  saved.forEach((recD) => {
+    const sD = sleepScoreFromData(recD.sleep);
+    if (sD == null) return;
+    const b = recD.sleep ? recD.sleep.before11 : null;
+    if (b === true)       b11p.push(sD);
+    else if (b === false) b11a.push(sD);
+    // null（未填就寢時間）→ 不納入
+  });
+  let before11 = null;
+  if (b11p.length > 0 && b11a.length > 0) {
+    const mp = b11p.reduce((a, b) => a + b, 0) / b11p.length;
+    const ma = b11a.reduce((a, b) => a + b, 0) / b11a.length;
+    before11 = { presentMean: mp, presentN: b11p.length, absentMean: ma, absentN: b11a.length, delta: mp - ma };
+  }
+
+  // 4) 總有效配對未滿門檻 → 整區資料累積中
+  if (validPairs.length < GROUPB_MIN_PAIRS) {
+    return { insufficient: true, totalPairs: validPairs.length, before11: before11 };
+  }
+
+  // 5) 每個 factor：present(有勾) vs absent(沒勾) 的隔日睡眠分
+  const allFactors = new Set();
+  validPairs.forEach(vp => vp.factors.forEach(f => allFactors.add(f)));
+  const results = [];
+  allFactors.forEach(f => {
+    if (isRetiredFactor(f)) return; // 退役因素：顯示層過濾，不動原始資料
+    const present = [], absent = [];
+    validPairs.forEach(vp => { (vp.factors.has(f) ? present : absent).push(vp.sleepNext); });
+    if (present.length < GROUPB_MIN_FACTOR_DAYS) return; // present 天數門檻
+    if (absent.length === 0) return;
+    const mp = present.reduce((a, b) => a + b, 0) / present.length;
+    const ma = absent.reduce((a, b) => a + b, 0) / absent.length;
+    results.push({
+      factor: f,
+      presentMean: mp,
+      n: present.length,
+      delta: mp - ma,
+      inner: INNER_STATE_FACTORS.indexOf(f) !== -1
+    });
+  });
+
+  const negatives = results.filter(r => r.delta < 0).sort((a, b) => a.delta - b.delta).slice(0, 5); // 最負前 5
+  const positives = results.filter(r => r.delta > 0).sort((a, b) => b.delta - a.delta).slice(0, 5); // 最正前 5
+  return { insufficient: false, totalPairs: validPairs.length, negatives: negatives, positives: positives, before11: before11 };
+}
+
+function renderSleepImpact() {
+  const body = document.getElementById('sleepImpactBody');
+  if (!body) return;
+  const data = calcSleepImpact();
+
+  // before11 單獨一行（同晚比較，不混入排行）
+  let before11HTML = '';
+  if (data.before11) {
+    const b = data.before11;
+    const a = Math.round(b.presentMean);
+    const diff = Math.round(Math.abs(b.delta));
+    const hl = b.delta >= 0 ? '高' : '低';
+    before11HTML = '<div style="font-size:15px;color:var(--text);line-height:1.7;padding:10px 12px;background:rgba(155,142,196,0.08);border:1px solid var(--border);border-radius:10px;margin-bottom:16px;">'
+      + '🌙 11點前就寢的當晚睡眠分 <strong>' + a + '</strong>（n=' + b.presentN + '），比 11點後' + hl + ' ' + diff + ' 分（同晚比較）'
+      + '</div>';
+  }
+
+  if (data.insufficient) {
+    body.innerHTML = before11HTML
+      + '<p style="font-size:16px;color:var(--muted);line-height:1.8;">資料累積中（有效配對 ' + data.totalPairs + '/' + GROUPB_MIN_PAIRS + '），記錄滿一段時間後這裡會出現分析。</p>';
+    return;
+  }
+
+  const rowHTML = (r) => {
+    const mean = Math.round(r.presentMean);
+    const amt = Math.round(Math.abs(r.delta));
+    const hl = r.delta >= 0 ? '高' : '低';
+    const hlColor = r.delta >= 0 ? 'var(--good)' : 'var(--danger)';
+    let label = r.factor;
+    if (r.inner && label.indexOf('💭') !== 0) label = '💭 ' + label; // 內在狀態前綴 💭
+    return '<div style="padding:9px 0;border-bottom:1px solid var(--border);font-size:15px;color:var(--text);line-height:1.7;">'
+      + label + '：勾選的隔天睡眠分 <strong>' + mean + '</strong>（n=' + r.n + '），比未勾選日'
+      + '<span style="color:' + hlColor + ';">' + hl + ' ' + amt + ' 分</span>'
+      + '</div>';
+  };
+
+  const section = (title, rows) => {
+    let inner;
+    if (!rows || rows.length === 0) inner = '<p style="font-size:15px;color:var(--muted);line-height:1.7;margin:0;">資料累積中</p>';
+    else inner = rows.map(rowHTML).join('');
+    return '<div style="margin-bottom:18px;">'
+      + '<h4 style="font-size:15px;color:var(--muted);letter-spacing:0.5px;margin:0 0 6px;font-weight:600;">' + title + '</h4>'
+      + inner + '</div>';
+  };
+
+  body.innerHTML = before11HTML
+    + section('較差睡眠關聯（隔日睡眠分較低）', data.negatives)
+    + section('較佳睡眠關聯（隔日睡眠分較高）', data.positives);
 }
 
 function renderCharts() {
@@ -3312,7 +3502,7 @@ fbAuth.onAuthStateChanged(async (user) => {
 
     // 重新渲染（資料已更新）
     updateHero();
-    if (document.getElementById('panel-overview').classList.contains('active')) { renderCharts(); renderFactorImpact(); }
+    if (document.getElementById('panel-overview').classList.contains('active')) { renderCharts(); renderFactorImpact(); renderSleepImpact(); }
     if (document.getElementById('panel-log').classList.contains('active')) renderLog();
 
   } else {
