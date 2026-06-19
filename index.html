@@ -1423,6 +1423,12 @@
         <canvas id="remChart"></canvas>
       </div>
     </div>
+    <!-- 因素影響力分析卡片（唯讀：只讀歷史記錄計算顯示，不改任何記錄或評分） -->
+    <div class="card" id="card-factor-impact" style="margin-bottom:16px">
+      <h3>因素影響力 · 哪些事常伴隨你的好/壞狀態</h3>
+      <div id="factorImpactBody"></div>
+      <p style="font-size:14px;color:var(--muted);opacity:0.85;margin-top:14px;line-height:1.7;">這是觀察到的關聯，不代表因果。資料越多越準確。</p>
+    </div>
   </section>
 
   <!-- ════ PANEL: 歷史日誌 ════ -->
@@ -1490,7 +1496,7 @@ function switchTab(name, btn) {
   // 趨勢總覽、歷史日誌隱藏 Hero
   // Hero 在 panel-record 內，Tab 切換自動控制顯示
 
-  if(name === 'overview') { renderCharts(); renderStatCards(); }
+  if(name === 'overview') { renderCharts(); renderStatCards(); renderFactorImpact(); }
   if(name === 'log') { renderLog(); calInit(); }
 }
 
@@ -2428,6 +2434,117 @@ function renderStatCards() {
   }
 }
 
+// ════════════════════════════════════════════════════════════
+// 因素影響力分析（唯讀功能：只讀 localStorage 歷史記錄、計算、顯示）
+// 不修改任何記錄、不改評分公式、不動現有邏輯
+// ════════════════════════════════════════════════════════════
+const INNER_STATE_FACTORS = ['💭 反芻思考', '😔 對自己失望', '🤯 過度完美主義', '😶 感到孤立'];
+
+// 從一筆記錄的 mood 物件重算 moodScore（0–100），公式與 calcScore() 內 moodScore 完全一致
+function moodScoreFromMood(m) {
+  if (!m || typeof m !== 'object') return null;
+  const keys = ['calm', 'anxiety', 'depress', 'energy', 'self', 'connect'];
+  for (const k of keys) {
+    const v = Number(m[k]);
+    if (!isFinite(v)) return null; // 缺漏或非數值 → 跳過該筆
+  }
+  const calm    = (Number(m.calm)    - 1) / 4 * 100;
+  const energy  = (Number(m.energy)  - 1) / 4 * 100;
+  const connect = (Number(m.connect) - 1) / 4 * 100;
+  const anxiety = (5 - Number(m.anxiety)) / 4 * 100; // 反向
+  const depress = (5 - Number(m.depress)) / 4 * 100; // 反向
+  const self    = (Number(m.self)    - 1) / 4 * 100;
+  return (calm * 11 + energy * 10 + connect * 9 + anxiety * 10 + depress * 10 + self * 8) / 58;
+}
+
+function calcFactorImpact() {
+  // 1) 蒐集所有歷史記錄（容錯：無 mood 或無 factors 的記錄一律跳過，不報錯）
+  const records = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (!key || key.indexOf('mc_day_') !== 0) continue; // 只取每日完整記錄
+    let rec;
+    try { rec = JSON.parse(localStorage.getItem(key)); } catch (e) { continue; }
+    if (!rec || typeof rec !== 'object') continue;
+    if (!rec.factors || (!Array.isArray(rec.factors.good) && !Array.isArray(rec.factors.bad))) continue;
+    const ms = moodScoreFromMood(rec.mood);
+    if (ms === null) continue;
+    const set = new Set();
+    (Array.isArray(rec.factors.good) ? rec.factors.good : []).forEach(f => { if (typeof f === 'string' && f.trim()) set.add(f.trim()); });
+    (Array.isArray(rec.factors.bad)  ? rec.factors.bad  : []).forEach(f => { if (typeof f === 'string' && f.trim()) set.add(f.trim()); });
+    records.push({ moodScore: ms, factors: set });
+  }
+
+  const totalDays = records.length;
+  if (totalDays < 7) return { insufficient: true, totalDays: totalDays };
+
+  // 2) 所有出現過的因素
+  const allFactors = new Set();
+  records.forEach(r => r.factors.forEach(f => allFactors.add(f)));
+
+  // 3) 每個因素：有勾 vs 沒勾 的 moodScore 平均，差值 = 有 − 沒有
+  const results = [];
+  allFactors.forEach(f => {
+    const withArr = [], withoutArr = [];
+    records.forEach(r => { (r.factors.has(f) ? withArr : withoutArr).push(r.moodScore); });
+    if (withArr.length < 5) return;      // 門檻：有勾天數 < 5 → 資料累積中，不排名
+    if (withoutArr.length === 0) return; // 無對照組則略過
+    const avgWith    = withArr.reduce((a, b) => a + b, 0) / withArr.length;
+    const avgWithout = withoutArr.reduce((a, b) => a + b, 0) / withoutArr.length;
+    results.push({
+      factor: f,
+      diff: avgWith - avgWithout,
+      days: withArr.length,
+      inner: INNER_STATE_FACTORS.indexOf(f) !== -1
+    });
+  });
+
+  // 4) 兩張榜，各取前 5
+  const negatives = results.filter(r => r.diff < 0).sort((a, b) => a.diff - b.diff).slice(0, 5); // 由負最多到最少
+  const positives = results.filter(r => r.diff > 0).sort((a, b) => b.diff - a.diff).slice(0, 5); // 由正最多到最少
+  return { insufficient: false, totalDays: totalDays, negatives: negatives, positives: positives };
+}
+
+function renderFactorImpact() {
+  const body = document.getElementById('factorImpactBody');
+  if (!body) return;
+  const data = calcFactorImpact();
+
+  if (data.insufficient) {
+    body.innerHTML = '<p style="font-size:16px;color:var(--muted);line-height:1.8;">資料累積中，記錄滿一段時間後這裡會出現分析。</p>';
+    return;
+  }
+
+  const rowHTML = (r, kind) => {
+    const amt = Math.round(Math.abs(r.diff));
+    const phrase = (kind === 'neg') ? ('通常低 ' + amt + ' 分') : ('通常高 ' + amt + ' 分');
+    const phraseColor = (kind === 'neg') ? 'var(--danger)' : 'var(--good)';
+    const innerTag = r.inner
+      ? '<span style="font-size:13px;color:var(--purple);border:1px solid var(--border);border-radius:8px;padding:1px 7px;margin-left:8px;white-space:nowrap;">💭 內在</span>'
+      : '';
+    return '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--border);">'
+      + '<span style="font-size:16px;color:var(--text);">' + r.factor + innerTag + '</span>'
+      + '<span style="font-size:15px;color:' + phraseColor + ';white-space:nowrap;">' + phrase + '</span>'
+      + '</div>';
+  };
+
+  const section = (title, rows, kind) => {
+    let inner;
+    if (!rows || rows.length === 0) {
+      inner = '<p style="font-size:15px;color:var(--muted);line-height:1.7;margin:0;">資料累積中</p>';
+    } else {
+      inner = rows.map(r => rowHTML(r, kind)).join('');
+    }
+    return '<div style="margin-bottom:18px;">'
+      + '<h4 style="font-size:15px;color:var(--muted);letter-spacing:0.5px;margin:0 0 6px;font-weight:600;text-transform:none;">' + title + '</h4>'
+      + inner + '</div>';
+  };
+
+  body.innerHTML =
+    section('最常伴隨低落的因素', data.negatives, 'neg') +
+    section('最常伴隨好狀態的因素', data.positives, 'pos');
+}
+
 function renderCharts() {
   const labels = [];
   const moodData      = new Array(14).fill(null);
@@ -3195,7 +3312,7 @@ fbAuth.onAuthStateChanged(async (user) => {
 
     // 重新渲染（資料已更新）
     updateHero();
-    if (document.getElementById('panel-overview').classList.contains('active')) renderCharts();
+    if (document.getElementById('panel-overview').classList.contains('active')) { renderCharts(); renderFactorImpact(); }
     if (document.getElementById('panel-log').classList.contains('active')) renderLog();
 
   } else {
