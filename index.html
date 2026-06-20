@@ -2217,7 +2217,6 @@ function collectDailyData() {
     },
     meds: { ...medState },
     hrv: parseFloat(document.getElementById('hrvMorningInput')?.value) || null,
-    steps: parseInt(document.getElementById('stepsInput')?.value) || null,
     factors: { good: goodFactors, bad: badFactors },
     note: document.getElementById('noteInput').value || '',
     morningMood: morningMood,
@@ -2274,14 +2273,10 @@ function loadSavedRecord() {
     });
   }
 
-  // 還原 HRV & 步數
+  // 還原 HRV
   if (d.hrv != null) {
     const hrvMEl = document.getElementById('hrvMorningInput');
     if (hrvMEl) hrvMEl.value = d.hrv;
-  }
-  if (d.steps != null) {
-    const stepsEl = document.getElementById('stepsInput');
-    if (stepsEl) stepsEl.value = d.steps;
   }
 
   // 還原影響因素
