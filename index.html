@@ -1437,6 +1437,11 @@
       <div id="sleepImpactBody"></div>
       <p style="font-size:14px;color:var(--muted);opacity:0.85;margin-top:14px;line-height:1.7;">隔天睡眠分的關聯觀察，不代表因果。資料越多越準確。</p>
     </div>
+    <!-- 睡眠 → 心情（當日）分析卡片（唯讀：sleep(D)→mood(D)，+0 同筆；睡眠分中位數分組 delta） -->
+    <div class="card" id="card-sleepmood-impact" style="margin-bottom:16px">
+      <h3>睡眠 → 心情（當日）· 睡得好的日子心情如何</h3>
+      <div id="sleepMoodImpactBody"></div>
+    </div>
   </section>
 
   <!-- ════ PANEL: 歷史日誌 ════ -->
@@ -1504,7 +1509,7 @@ function switchTab(name, btn) {
   // 趨勢總覽、歷史日誌隱藏 Hero
   // Hero 在 panel-record 內，Tab 切換自動控制顯示
 
-  if(name === 'overview') { renderCharts(); renderStatCards(); renderFactorImpact(); renderSleepImpact(); }
+  if(name === 'overview') { renderCharts(); renderStatCards(); renderFactorImpact(); renderSleepImpact(); renderSleepMoodImpact(); }
   if(name === 'log') { renderLog(); calInit(); }
 }
 
@@ -2735,6 +2740,110 @@ function renderSleepImpact() {
     + section('較佳睡眠關聯（隔日睡眠分較高）', data.positives);
 }
 
+// ════════════════════════════════════════════════════════════
+// Group C：睡眠 → 心情（當日）分析（唯讀）
+// sleep(D) → mood(D)，+0 同筆配對；只用 mc_saved 真記錄，禁止補值
+// 收齊有效 pair 後取 sleepScore 中位數分兩組，比較三項讀數的組間平均差
+// 三讀數方向一致（都是越高越好）：心情分、焦慮反向分、低落反向分
+// ════════════════════════════════════════════════════════════
+const GROUPC_MIN_PAIRS = 14;  // 有效 pair 數門檻
+const GROUPC_MIN_GROUP = 5;   // 每組最少天數門檻
+
+function calcSleepMoodImpact() {
+  // 1) 蒐集 mc_saved 為 true 的真記錄，做 sleep/mood +0 同筆配對
+  const pairs = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (!key || key.indexOf('mc_day_') !== 0) continue;
+    const datePart = key.slice(7); // 'Y_M_D'
+    if (!localStorage.getItem('mc_saved_' + datePart)) continue; // 僅真記錄
+    let rec;
+    try { rec = JSON.parse(localStorage.getItem(key)); } catch (e) { continue; }
+    if (!rec || typeof rec !== 'object') continue;
+
+    // 資料衛生：缺一即丟整筆
+    // (a) 睡眠 totalHours null/undefined → 丟（必須先擋，避免 sleepScoreFromData 的未填預設 50 污染關聯）
+    const sl = rec.sleep;
+    if (!sl || typeof sl !== 'object') continue;
+    if (sl.totalHours === null || sl.totalHours === undefined) continue;
+    const sleepScore = sleepScoreFromData(sl);
+    if (sleepScore == null) continue; // 非數值等異常 → 丟
+
+    // (b) mood 缺、或六項任一缺 → 丟（moodScoreFromMood 已逐項驗證）
+    const moodScore = moodScoreFromMood(rec.mood);
+    if (moodScore == null) continue;
+
+    // 焦慮/低落反向分（與 moodScore 同向：越高代表越不焦慮/越不低落）
+    const anxScore = (5 - Number(rec.mood.anxiety)) / 4 * 100;
+    const depScore = (5 - Number(rec.mood.depress)) / 4 * 100;
+
+    pairs.push({ sleepScore: sleepScore, moodScore: moodScore, anxScore: anxScore, depScore: depScore });
+  }
+
+  const nPairs = pairs.length;
+  if (nPairs < GROUPC_MIN_PAIRS) return { ok: false, reason: 'pairs', nPairs: nPairs };
+
+  // 2) sleepScore 中位數（每次重算，會隨資料漂移，正常）
+  const sorted = pairs.map(p => p.sleepScore).slice().sort((a, b) => a - b);
+  const n = sorted.length;
+  const median = (n % 2 === 1) ? sorted[(n - 1) / 2] : (sorted[n / 2 - 1] + sorted[n / 2]) / 2;
+
+  // 3) 分兩組：中位數重複值落邊界時歸「好眠半」(>=)，避免兩組失衡
+  const good = pairs.filter(p => p.sleepScore >= median);
+  const bad  = pairs.filter(p => p.sleepScore <  median);
+  if (good.length < GROUPC_MIN_GROUP || bad.length < GROUPC_MIN_GROUP) {
+    return { ok: false, reason: 'group', nPairs: nPairs };
+  }
+
+  // 4) 各讀數的組間平均差 delta = mean(好眠半) − mean(差眠半)
+  const mean = (arr, k) => arr.reduce((a, p) => a + p[k], 0) / arr.length;
+  const deltaMood = mean(good, 'moodScore') - mean(bad, 'moodScore');
+  const deltaAnx  = mean(good, 'anxScore')  - mean(bad, 'anxScore');
+  const deltaDep  = mean(good, 'depScore')  - mean(bad, 'depScore');
+
+  return {
+    ok: true,
+    nPairs: nPairs,
+    median: median,
+    results: [
+      { kind: 'mood', word: '心情分平均高', delta: deltaMood },
+      { kind: 'anx',  word: '焦慮平均低',   delta: deltaAnx  },
+      { kind: 'dep',  word: '低落平均低',   delta: deltaDep  }
+    ]
+  };
+}
+
+function renderSleepMoodImpact() {
+  const body = document.getElementById('sleepMoodImpactBody');
+  if (!body) return;
+  const data = calcSleepMoodImpact();
+
+  // 未達門檻：累積中提示
+  if (!data.ok) {
+    body.innerHTML = '<p style="font-size:16px;color:var(--muted);line-height:1.8;">睡眠→心情分析累積中（目前 '
+      + data.nPairs + '／' + GROUPC_MIN_PAIRS + ' 天）。需要更多有完整睡眠與心情記錄的日子。</p>';
+    return;
+  }
+
+  // 三行描述性輸出：delta 正→正面色、負→警示色；數值四捨五入整數、加正負號
+  const rowHTML = (r) => {
+    const v = Math.round(r.delta);
+    const signed = (v >= 0 ? '+' : '') + v;
+    const color = (r.delta >= 0) ? 'var(--good)' : 'var(--warn)';
+    return '<div style="padding:10px 0;border-bottom:1px solid var(--border);font-size:16px;color:var(--text);line-height:1.7;">'
+      + '睡眠分較高的日子，' + r.word + ' '
+      + '<strong style="color:' + color + ';">' + signed + '</strong> 分'
+      + '</div>';
+  };
+
+  const rowsHTML = data.results.map(rowHTML).join('');
+
+  const disclaimer = '<p style="font-size:14px;color:var(--muted);opacity:0.85;margin-top:14px;line-height:1.7;">'
+    + '邊際關聯，未控制共現因素，可能雙向。樣本 n=' + data.nPairs + '，建議累積 30 天再解讀，勿據此改變行為。</p>';
+
+  body.innerHTML = rowsHTML + disclaimer;
+}
+
 function renderCharts() {
   const labels = [];
   const moodData      = new Array(14).fill(null);
@@ -3502,7 +3611,7 @@ fbAuth.onAuthStateChanged(async (user) => {
 
     // 重新渲染（資料已更新）
     updateHero();
-    if (document.getElementById('panel-overview').classList.contains('active')) { renderCharts(); renderFactorImpact(); renderSleepImpact(); }
+    if (document.getElementById('panel-overview').classList.contains('active')) { renderCharts(); renderFactorImpact(); renderSleepImpact(); renderSleepMoodImpact(); }
     if (document.getElementById('panel-log').classList.contains('active')) renderLog();
 
   } else {
