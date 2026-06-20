@@ -3,9 +3,11 @@
 
 # OS
 .DS_Store
+*~
+*.swp
 
 # backups
-*.bak
-*.bak2
-*.bak3
+*.bak*
 *.safe
+*.conflict.bak
+*.orig
